@@ -169,7 +169,6 @@ button,input,select{font-family:var(--ff)}
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 </head>
 <body>
-<!-- Landing is static HTML so buttons work instantly, no JS dependency -->
 <div id="landing" class="land">
   <div class="land-logo">mis finanzas</div>
   <p class="land-sub">Controlá tus ingresos y gastos en ARS y USD desde cualquier dispositivo. Simple, rápido, y siempre sincronizado.</p>
@@ -380,10 +379,14 @@ function initApp(pendingMode) {
     document.body.appendChild(bg);
   };
   window._sR=async function(){var v=parseFloat(document.getElementById('ri').value);if(v>0){S.xr=v;await _saveSettings();toast('TC: $'+v.toLocaleString('es-AR'))}document.querySelector('.mbg').remove();render()};
+  
   window._saveBudgets=async function(){
+    var metaEl = document.getElementById('metaAhorro');
+    if(metaEl) S.budgets['MetaAhorro'] = parseInt(metaEl.value) || 0;
     CO.forEach(function(c){var el=document.getElementById('b_'+c.replace(/[^a-zA-Z]/g,''));if(el)S.budgets[c]=parseInt(el.value)||0});
-    await _saveSettings();toast('Presupuestos guardados ✓');_gD();
+    await _saveSettings();toast('Configuración guardada ✓');_gD();
   };
+
   window._setFormAmt=function(v){S.form.amount=v;var eq=document.getElementById('eq');if(eq)eq.textContent=S.form.currency==='USD'&&v?'≈ '+fA(parseFloat(v)*S.xr)+' al TC oficial':''};
   window._setFormDesc=function(v){S.form.desc=v};
   window._setFormDate=function(v){S.form.date=v};
@@ -427,7 +430,24 @@ function initApp(pendingMode) {
     var pieData=cs.map(function(e){return{l:e[0],v:e[1]}});
     var rec=mt.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date)}).slice(0,5);
 
-    var budgetEntries=Object.entries(S.budgets).filter(function(e){return e[1]>0});
+    var r30 = [];
+    var act = 0, max = 0;
+    var fD = new Date();
+    for(var i=29; i>=0; i--) {
+      var d = new Date(fD); d.setDate(d.getDate() - i);
+      var ds = d.toISOString().slice(0,10);
+      var has = S.txns.some(function(t){return t.date === ds});
+      if(has){ act++; if(act>max)max=act; } else { act=0; }
+      r30.push(has);
+    }
+    var rachaHTML = '<div class="cd"><div class="ct">Racha <span style="font-weight:normal;color:var(--t4);text-transform:none">(Últimos 30 días)</span></div><p style="font-size:12px;color:var(--t3);margin-bottom:12px">Tenés movimientos en '+r30.filter(Boolean).length+' días. Racha máxima: <span style="color:var(--g);font-weight:600">'+max+' días</span></p><div style="display:flex;gap:4px;height:24px">'+r30.map(function(h){return'<div style="flex:1;border-radius:3px;background:'+(h?'var(--g)':'var(--s2)')+';opacity:'+(h?'0.8':'1')+'"></div>'}).join('')+'</div></div>';
+
+    var metaAhorro = S.budgets['MetaAhorro'] || 0;
+    var ahorrado = ct['Ahorro/Inversión'] || 0;
+    var pctAhorro = metaAhorro > 0 ? Math.min((ahorrado / metaAhorro) * 100, 100) : 0;
+    var ahorroHTML = metaAhorro > 0 ? '<div class="cd"><div style="display:flex;justify-content:space-between;margin-bottom:12px"><div class="ct" style="margin:0">Así van tus ahorros</div><span style="font-size:11px;color:var(--t3)">Meta: '+fA(metaAhorro)+'</span></div><div class="btrk" style="height:12px;background:#222;margin-bottom:8px"><div class="bfil" style="width:'+pctAhorro+'%;background:var(--g);box-shadow:0 0 10px var(--g2)"></div></div><div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--g);font-weight:600">'+fA(ahorrado)+'</span><span style="color:var(--t3)">'+pctAhorro.toFixed(1)+'%</span></div></div>' : '';
+
+    var budgetEntries=Object.entries(S.budgets).filter(function(e){return e[1]>0 && e[0] !== 'MetaAhorro'});
     var bHTML='';
     if(budgetEntries.length>0){
       bHTML='<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="ct" style="margin:0">Presupuestos</div><span class="lnk" onclick="_goBudgets()">Editar →</span></div>';
@@ -437,27 +457,28 @@ function initApp(pendingMode) {
       bHTML+='</div>';
     }
 
-    el.innerHTML='<div class="pb100"><div class="hdr"><div class="logo2">mis finanzas</div><div class="hdr-r"><span onclick="_csv()">📥 CSV</span><span onclick="_logout()" style="color:var(--r)">Salir</span></div></div><div class="rb"><div style="display:flex;align-items:center;gap:8px"><span class="rl">TC Oficial</span><span class="rv">$'+S.xr.toLocaleString('es-AR')+'</span></div><span class="ra" onclick="_editRate()">⚙</span></div><div class="mn"><span onclick="_pM()">‹</span><span class="ml">'+MO[S.month]+' '+S.year+'</span><span onclick="_nM()">›</span></div><div class="cd"><div class="ct">Balance consolidado <em>(en ARS)</em></div><div class="bal '+(bl>=0?'pos':'neg')+'">'+(bl>=0?'+':'')+fA(bl)+'</div></div><div class="g2"><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('ARS')+'<span style="font-size:12px;color:var(--t3)">Pesos</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fA(ai)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fA(ag)+'</div></div><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('USD')+'<span style="font-size:12px;color:var(--t3)">Dólares</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fU(ui)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fU(ug)+'</div></div></div><div class="g2"><div class="mc qa" onclick="_oF(\'ingreso\')" style="border-color:var(--g2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--g)">↑</span><span style="font-size:14px;font-weight:600;color:var(--g)">Ingreso</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar cobro</p></div><div class="mc qa" onclick="_oF(\'gasto\')" style="border-color:var(--r2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--r)">↓</span><span style="font-size:14px;font-weight:600;color:var(--r)">Gasto</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar pago</p></div></div>'+bHTML+'<div class="cd"><div class="ct">Gastos por categoría</div>'+(pieData.length?pieH(pieData,110):'<div class="emp">Sin gastos este mes</div>')+'</div><div class="cd" style="padding-bottom: 0;"><div class="ct">Evolución de tus finanzas <em>(ARS)</em></div><div id="chart-evolucion"></div></div><div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="ct" style="margin:0">Últimos movimientos</div><span class="lnk" onclick="_gL()">Ver todos →</span></div>'+(rec.length===0?'<div class="emp">Tocá + para agregar tu primer movimiento</div>':rec.map(function(t){return'<div class="tx"><div class="lf"><div class="c2">'+t.category+' '+bdg(t.currency,1)+'</div>'+(t.description&&t.description!==t.category?'<div class="ds">'+t.description+'</div>':'')+'</div><span class="a2" style="color:'+(t.type==='ingreso'?'var(--g)':'var(--r)')+'">'+(t.type==='ingreso'?'+':'-')+fM(t.amount,t.currency)+'</span></div>'}).join(''))+'</div><div style="text-align:center;padding:4px 0 8px"><span class="lnk" onclick="_goBudgets()">⚙ Presupuestos por categoría</span></div></div><div class="fab" onclick="_oF()">+</div><div class="nav"><div class="on" onclick="_gD()">📊<span>Dashboard</span></div><div onclick="_gL()">📋<span>Movimientos</span></div></div>';
-      var chartOptions = {
-        series: [
-          { name: 'Ingresos', data: l6.map(function(d){ return d.ig }) },
-          { name: 'Gastos', data: l6.map(function(d){ return d.gs }) }
-        ],
-        chart: { type: 'area', height: 250, toolbar: { show: false }, background: 'transparent', fontFamily: 'Plus Jakarta Sans, sans-serif' },
-        colors: ['#00dc82', '#ff4757'],
-        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
-        dataLabels: { enabled: false },
-        stroke: { curve: 'smooth', width: 2 },
-        xaxis: { categories: l6.map(function(d){ return d.l }), labels: { style: { colors: '#aaa' } }, axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { show: false },
-        grid: { borderColor: '#1e1e1e', strokeDashArray: 4, yaxis: { lines: { show: true } } },
-        theme: { mode: 'dark' }, legend: { show: false },
-        tooltip: { theme: 'dark', y: { formatter: function (val) { return fA(val) } } }
-      };
-      setTimeout(function() {
-        var chartElement = document.querySelector("#chart-evolucion");
-        if (chartElement) { new ApexCharts(chartElement, chartOptions).render(); }
-      }, 50);    
+    el.innerHTML='<div class="pb100"><div class="hdr"><div class="logo2">mis finanzas</div><div class="hdr-r"><span onclick="_csv()">📥 CSV</span><span onclick="_logout()" style="color:var(--r)">Salir</span></div></div><div class="rb"><div style="display:flex;align-items:center;gap:8px"><span class="rl">TC Oficial</span><span class="rv">$'+S.xr.toLocaleString('es-AR')+'</span></div><span class="ra" onclick="_editRate()">⚙</span></div><div class="mn"><span onclick="_pM()">‹</span><span class="ml">'+MO[S.month]+' '+S.year+'</span><span onclick="_nM()">›</span></div><div class="cd"><div class="ct">Balance consolidado <em>(en ARS)</em></div><div class="bal '+(bl>=0?'pos':'neg')+'">'+(bl>=0?'+':'')+fA(bl)+'</div></div><div class="g2"><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('ARS')+'<span style="font-size:12px;color:var(--t3)">Pesos</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fA(ai)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fA(ag)+'</div></div><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('USD')+'<span style="font-size:12px;color:var(--t3)">Dólares</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fU(ui)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fU(ug)+'</div></div></div><div class="g2"><div class="mc qa" onclick="_oF(\'ingreso\')" style="border-color:var(--g2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--g)">↑</span><span style="font-size:14px;font-weight:600;color:var(--g)">Ingreso</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar cobro</p></div><div class="mc qa" onclick="_oF(\'gasto\')" style="border-color:var(--r2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--r)">↓</span><span style="font-size:14px;font-weight:600;color:var(--r)">Gasto</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar pago</p></div></div>'+bHTML+'<div class="cd"><div class="ct">Gastos por categoría</div>'+(pieData.length?pieH(pieData,110):'<div class="emp">Sin gastos este mes</div>')+'</div>'+rachaHTML+ahorroHTML+'<div class="cd" style="padding-bottom: 0;"><div class="ct">Evolución de tus finanzas <em>(ARS)</em></div><div id="chart-evolucion"></div></div><div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="ct" style="margin:0">Últimos movimientos</div><span class="lnk" onclick="_gL()">Ver todos →</span></div>'+(rec.length===0?'<div class="emp">Tocá + para agregar tu primer movimiento</div>':rec.map(function(t){return'<div class="tx"><div class="lf"><div class="c2">'+t.category+' '+bdg(t.currency,1)+'</div>'+(t.description&&t.description!==t.category?'<div class="ds">'+t.description+'</div>':'')+'</div><span class="a2" style="color:'+(t.type==='ingreso'?'var(--g)':'var(--r)')+'">'+(t.type==='ingreso'?'+':'-')+fM(t.amount,t.currency)+'</span></div>'}).join(''))+'</div><div style="text-align:center;padding:4px 0 8px"><span class="lnk" onclick="_goBudgets()">⚙ Presupuestos por categoría</span></div></div><div class="fab" onclick="_oF()">+</div><div class="nav"><div class="on" onclick="_gD()">📊<span>Dashboard</span></div><div onclick="_gL()">📋<span>Movimientos</span></div></div>';
+
+    var chartOptions = {
+      series: [
+        { name: 'Ingresos', data: l6.map(function(d){ return d.ig }) },
+        { name: 'Gastos', data: l6.map(function(d){ return d.gs }) }
+      ],
+      chart: { type: 'area', height: 250, toolbar: { show: false }, background: 'transparent', fontFamily: 'Plus Jakarta Sans, sans-serif' },
+      colors: ['#00dc82', '#ff4757'],
+      fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
+      dataLabels: { enabled: false },
+      stroke: { curve: 'smooth', width: 2 },
+      xaxis: { categories: l6.map(function(d){ return d.l }), labels: { style: { colors: '#aaa' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+      yaxis: { show: false },
+      grid: { borderColor: '#1e1e1e', strokeDashArray: 4, yaxis: { lines: { show: true } } },
+      theme: { mode: 'dark' }, legend: { show: false },
+      tooltip: { theme: 'dark', y: { formatter: function (val) { return fA(val) } } }
+    };
+    setTimeout(function() {
+      var chartElement = document.querySelector("#chart-evolucion");
+      if (chartElement) { new ApexCharts(chartElement, chartOptions).render(); }
+    }, 50);    
   }
 
   function rList(){
@@ -467,7 +488,8 @@ function initApp(pendingMode) {
   }
 
   function rBudgets(){
-    el.innerHTML='<div class="pb100"><div class="hdr"><span style="font-size:17px;font-weight:600">Presupuestos mensuales</span><span onclick="_gD()" style="cursor:pointer;font-size:20px;color:var(--t3)">✕</span></div><p style="padding:0 20px;font-size:13px;color:var(--t3);margin-bottom:16px">Definí un límite mensual en ARS por categoría. Dejá en 0 las que no querés controlar.</p><div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">'+CO.map(function(c){var cid='b_'+c.replace(/[^a-zA-Z]/g,'');return'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:13px;color:var(--t2);width:130px;flex-shrink:0">'+c+'</span><input type="number" inputmode="numeric" class="fi" style="padding:10px 12px;font-size:14px;margin:0" placeholder="0" value="'+(S.budgets[c]||'')+'" id="'+cid+'"></div>'}).join('')+'<div class="sv" onclick="_saveBudgets()" style="margin-top:8px">Guardar presupuestos</div></div></div>';
+    var meta = S.budgets['MetaAhorro'] || '';
+    el.innerHTML='<div class="pb100"><div class="hdr"><span style="font-size:17px;font-weight:600">Configuración</span><span onclick="_gD()" style="cursor:pointer;font-size:20px;color:var(--t3)">✕</span></div><div style="padding:0 20px"><div style="background:var(--s);border:1px solid var(--g2);border-radius:12px;padding:16px;margin-bottom:24px"><div style="font-size:13px;font-weight:600;color:var(--g);margin-bottom:8px">Meta de Ahorro Mensual (ARS)</div><input type="number" inputmode="numeric" class="fi" style="margin:0;border-color:var(--g2)" placeholder="Ej: 800000" value="'+meta+'" id="metaAhorro"></div><p style="font-size:13px;color:var(--t3);margin-bottom:16px">Definí límites mensuales en ARS para tus gastos. Dejá en 0 las que no querés controlar.</p><div style="display:flex;flex-direction:column;gap:12px">'+CO.map(function(c){var cid='b_'+c.replace(/[^a-zA-Z]/g,'');return'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:13px;color:var(--t2);width:130px;flex-shrink:0">'+c+'</span><input type="number" inputmode="numeric" class="fi" style="padding:10px 12px;font-size:14px;margin:0" placeholder="0" value="'+(S.budgets[c]||'')+'" id="'+cid+'"></div>'}).join('')+'<div class="sv" onclick="_saveBudgets()" style="margin-top:8px">Guardar configuración</div></div></div></div>';
   }
 
   function rForm(){
