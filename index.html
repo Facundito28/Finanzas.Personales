@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Mis Finanzas</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTWlzIEZpbmFuemFzIiwic2hvcnRfbmFtZSI6IkZpbmFuemFzIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzBhMGEwYSIsInRoZW1lX2NvbG9yIjoiIzBhMGEwYSJ9">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a; --surface: #141414; --surface2: #1a1a1a; --border: #1e1e1e;
+  --text: #f0f0f0; --text2: #aaa; --text3: #666; --text4: #444;
+  --green: #00dc82; --green-dim: #00dc8220; --red: #ff4757; --red-dim: #ff475720;
+  --blue: #3b82f6; --blue-dim: #3b82f620; --accent: linear-gradient(135deg, #00dc82, #3b82f6);
+  --radius: 16px; --radius-sm: 12px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { 
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  background: var(--bg); color: var(--text); min-height: 100vh;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+body { max-width: 480px; margin: 0 auto; padding-bottom: 100px; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+/* ── Header ── */
+.header { padding: 20px 20px 8px; display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 20px; font-weight: 800; background: var(--accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header-right { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text3); }
+
+/* ── Rate bar ── */
+.rate-bar { margin: 4px 16px 0; padding: 10px 16px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.rate-bar .label { font-size: 12px; color: var(--text3); }
+.rate-bar .value { font-size: 15px; font-weight: 700; color: var(--blue); font-variant-numeric: tabular-nums; margin-left: 8px; }
+.rate-bar .actions { display: flex; gap: 4px; }
+.rate-bar .actions button { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; display: flex; }
+
+/* ── Month nav ── */
+.month-nav { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px 20px 6px; }
+.month-nav button { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; display: flex; }
+.month-nav .label { font-size: 15px; font-weight: 600; color: #ccc; min-width: 150px; text-align: center; }
+
+/* ── Cards ── */
+.card { background: var(--surface); border-radius: var(--radius); padding: 18px 20px; margin: 10px 16px; border: 1px solid var(--border); }
+.card-title { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase; }
+.card-title span { color: var(--text4); text-transform: none; letter-spacing: 0; }
+
+/* ── Balance ── */
+.balance { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+.balance.positive { color: var(--green); }
+.balance.negative { color: var(--red); }
+
+/* ── Grid row ── */
+.grid-2 { display: flex; gap: 10px; padding: 0 16px; }
+.grid-2 > div { flex: 1; }
+
+/* ── Mini cards ── */
+.mini-card { background: var(--surface); border-radius: 14px; padding: 14px 16px; border: 1px solid var(--border); }
+.mini-card .badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; padding: 2px 7px; border-radius: 6px; }
+.badge-ars { background: var(--green-dim); color: var(--green); border: 1px solid #00dc8240; }
+.badge-usd { background: var(--blue-dim); color: var(--blue); border: 1px solid #3b82f640; }
+.mini-card .sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.mini-card .val { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.val-green { color: var(--green); }
+.val-red { color: var(--red); }
+
+/* ── Quick add ── */
+.quick-add { cursor: pointer; transition: border-color 0.2s; }
+.quick-add:hover { border-color: #ffffff20; }
+.quick-add .icon { display: flex; align-items: center; gap: 8px; }
+.quick-add .icon svg { flex-shrink: 0; }
+.quick-add .icon span { font-size: 14px; font-weight: 600; }
+.quick-add p { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ── Bar chart ── */
+.bars { display: flex; align-items: flex-end; gap: 3px; height: 48px; }
+.bars .col { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.bars .bar { width: 100%; max-width: 28px; border-radius: 4px; transition: height 0.3s; }
+.bars .lbl { font-size: 9px; color: var(--text3); margin-top: 2px; }
+
+/* ── Category breakdown ── */
+.cat-row { margin-bottom: 6px; }
+.cat-row .top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px; }
+.cat-row .name { color: #e0e0e0; }
+.cat-row .amt { color: var(--text2); font-variant-numeric: tabular-nums; }
+.cat-row .pct { font-size: 11px; color: var(--text3); }
+.cat-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.cat-bar div { height: 100%; border-radius: 3px; transition: width 0.4s; }
+
+/* ── Transaction list ── */
+.txn { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.txn:last-child { border-bottom: none; }
+.txn .left { flex: 1; }
+.txn .cat { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.txn .cat .badge { font-size: 8px; padding: 1px 5px; }
+.txn .desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.txn .right { display: flex; align-items: center; gap: 8px; }
+.txn .amount { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.txn .actions button { background: none; border: none; color: var(--text4); cursor: pointer; padding: 4px; display: flex; }
+.link { font-size: 12px; color: var(--blue); background: none; border: none; cursor: pointer; font-weight: 500; }
+
+/* ── FAB ── */
+.fab { position: fixed; bottom: 80px; right: calc(50% - 210px); width: 56px; height: 56px; border-radius: 50%; background: var(--accent); border: none; color: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 20px rgba(0,220,130,0.3); z-index: 100; transition: transform 0.2s; }
+.fab:active { transform: scale(0.9); }
+@media (max-width: 480px) { .fab { right: 20px; } }
+
+/* ── Bottom nav ── */
+.nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--bg); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 48px; padding: 12px 0 max(20px, env(safe-area-inset-bottom)); z-index: 99; }
+.nav button { background: none; border: none; color: var(--text4); display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; cursor: pointer; transition: color 0.2s; font-family: inherit; }
+.nav button.active { color: var(--green); }
+
+/* ── Form ── */
+.form-page { padding: 12px 20px; display: flex; flex-direction: column; gap: 18px; }
+.form-toggle { display: flex; gap: 8px; }
+.form-toggle button { flex: 1; padding: 12px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 600; font-size: 15px; font-family: inherit; transition: all 0.2s; }
+.form-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; display: block; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+.form-input { width: 100%; padding: 14px 16px; background: var(--surface2); border: 1px solid #2a2a2a; border-radius: var(--radius-sm); color: var(--text); font-size: 16px; outline: none; font-family: inherit; transition: border-color 0.2s; }
+.form-input:focus { border-color: var(--blue); }
+.amount-wrap { position: relative; }
+.amount-wrap .prefix { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; font-weight: 600; }
+.amount-wrap input { padding-left: 60px; font-size: 28px; font-weight: 700; letter-spacing: -1px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 8px 16px; border-radius: 20px; border: 1.5px solid #2a2a2a; background: transparent; color: var(--text3); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; font-family: inherit; transition: all 0.2s; }
+.chip.active { border-color: var(--blue); background: var(--blue-dim); color: var(--blue); }
+.chip.active-green { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+.save-btn { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 14px; color: #000; font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.equiv { font-size: 12px; color: var(--text3); margin-top: 6px; padding-left: 4px; }
+
+/* ── Modal ── */
+.modal-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 200; }
+.modal { background: var(--surface2); border-radius: var(--radius); padding: 24px; width: 300px; border: 1px solid #2a2a2a; }
+.modal p { font-size: 15px; font-weight: 500; margin-bottom: 16px; text-align: center; }
+.modal .btns { display: flex; gap: 10px; }
+.modal .btns button { flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 500; font-family: inherit; font-size: 14px; }
+.modal .btn-cancel { border: 1px solid #333; background: transparent; color: var(--text2); }
+.modal .btn-danger { border: none; background: var(--red); color: #fff; font-weight: 600; }
+.modal .btn-primary { border: none; background: var(--accent); color: #000; font-weight: 600; }
+
+/* ── Toast ── */
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #222; color: var(--green); padding: 10px 24px; border-radius: 12px; font-size: 14px; font-weight: 500; z-index: 300; box-shadow: 0 4px 20px rgba(0,0,0,0.5); animation: toastIn 0.3s ease; pointer-events: none; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+/* ── Empty state ── */
+.empty { text-align: center; color: var(--text4); padding: 24px; font-size: 13px; }
+
+/* ── Export/Import ── */
+.data-actions { display: flex; gap: 8px; padding: 8px 16px; justify-content: center; }
+.data-actions button { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text3); font-size: 11px; padding: 6px 14px; cursor: pointer; font-family: inherit; }
+.data-actions button:hover { border-color: var(--text3); }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA & STATE
+// ═══════════════════════════════════════════════════
+const STORE = 'misfinanzas-v1';
+const CATS_IN = ['Sueldo','Freelance','Inversiones','Otros'];
+const CATS_OUT = ['Alquiler/Expensas','Supermercado','Delivery/Comida','Transporte','Salidas','Suscripciones','Ropa','Salud','Educación','Ahorro/Inversión','Otros'];
+const MO = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+let state = {
+  txns: [],
+  xr: 1080,
+  view: 'dashboard', // dashboard, list, form
+  month: new Date().getMonth(),
+  year: new Date().getFullYear(),
+  editId: null,
+  form: { type:'gasto', currency:'ARS', amount:'', category:'', desc:'', date: new Date().toISOString().slice(0,10) },
+};
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d.txns) state.txns = d.txns;
+      if (d.xr) state.xr = d.xr;
+    }
+  } catch(e) { console.error('Load error:', e); }
+}
+
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify({ txns: state.txns, xr: state.xr, v: 1 })); }
+  catch(e) { console.error('Save error:', e); }
+}
+
+function gid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fA(n) { return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n); }
+function fU(n) { return 'US$ '+new Intl.NumberFormat('en-US',{maximumFractionDigits:2,minimumFractionDigits:2}).format(n); }
+function fM(n,c) { return c==='USD'?fU(n):fA(n); }
+
+// ═══════════════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════════════
+const app = document.getElementById('app');
+let toastTimer = null;
+
+function toast(msg) {
+  let t = document.querySelector('.toast');
+  if (t) t.remove();
+  t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.remove(), 2200);
+}
+
+function render() {
+  if (state.view === 'form') renderForm();
+  else if (state.view === 'list') renderList();
+  else renderDashboard();
+}
+
+// ── helpers ──
+function mTxns() {
+  return state.txns.filter(t => {
+    const d = new Date(t.date);
+    return d.getMonth() === state.month && d.getFullYear() === state.year;
+  });
+}
+
+function badge(c, sm) {
+  const u = c==='USD';
+  return `<span class="badge ${u?'badge-usd':'badge-ars'}" style="font-size:${sm?'8':'10'}px;padding:${sm?'1px 5px':'2px 7px'}">${u?'USD':'ARS'}</span>`;
+}
+
+// ═══════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════
+function renderDashboard() {
+  const mt = mTxns();
+  const arsI = mt.filter(t=>t.type==='ingreso'&&t.currency==='ARS').reduce((s,t)=>s+t.amount,0);
+  const usdI = mt.filter(t=>t.type==='ingreso'&&t.currency==='USD').reduce((s,t)=>s+t.amount,0);
+  const arsG = mt.filter(t=>t.type==='gasto'&&t.currency==='ARS').reduce((s,t)=>s+t.amount,0);
+  const usdG = mt.filter(t=>t.type==='gasto'&&t.currency==='USD').reduce((s,t)=>s+t.amount,0);
+  const bal = (arsI+usdI*state.xr)-(arsG+usdG*state.xr);
+
+  // Last 6 months
+  let l6 = [];
+  for(let i=5;i>=0;i--){
+    let m=state.month-i, y=state.year;
+    if(m<0){m+=12;y--;}
+    const ts=state.txns.filter(t=>{const d=new Date(t.date);return d.getMonth()===m&&d.getFullYear()===y;});
+    l6.push({
+      label:MO[m].slice(0,3),
+      ing:ts.filter(t=>t.type==='ingreso').reduce((s,t)=>s+(t.currency==='USD'?t.amount*state.xr:t.amount),0),
+      gas:ts.filter(t=>t.type==='gasto').reduce((s,t)=>s+(t.currency==='USD'?t.amount*state.xr:t.amount),0),
+    });
+  }
+
+  // Category breakdown
+  const catTotals = {};
+  mt.filter(t=>t.type==='gasto').forEach(t=>{
+    const v=t.currency==='USD'?t.amount*state.xr:t.amount;
+    catTotals[t.category]=(catTotals[t.category]||0)+v;
+  });
+  const catSorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  const catTotal = catSorted.reduce((s,[,v])=>s+v,0)||1;
+
+  // Recent
+  const recent = [...mt].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+
+  // Bar chart helper
+  function bars(data, color) {
+    const mx = Math.max(...data.map(d=>d.value),1);
+    return data.map(d=>`<div class="col"><div class="bar" style="height:${Math.max(4,(d.value/mx)*44)}px;background:${color};opacity:${d.value===0?0.2:1}"></div><span class="lbl">${d.label}</span></div>`).join('');
+  }
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="logo">mis finanzas</div>
+      <div class="header-right">${state.txns.length} mov.</div>
+    </div>
+
+    <div class="rate-bar">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="label">TC Oficial</span>
+        <span class="value">$${state.xr.toLocaleString('es-AR')}</span>
+      </div>
+      <div class="actions">
+        <button onclick="editRate()" title="Editar TC">⚙</button>
+      </div>
+    </div>
+
+    <div class="month-nav">
+      <button onclick="prevMonth()">‹</button>
+      <span class="label">${MO[state.month]} ${state.year}</span>
+      <button onclick="nextMonth()">›</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Balance consolidado <span>(en ARS)</span></div>
+      <div class="balance ${bal>=0?'positive':'negative'}">${bal>=0?'+':''}${fA(bal)}</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">${badge('ARS')}<span style="font-size:12px;color:var(--text3)">Pesos</span></div>
+        <div class="sub">Ingresos</div><div class="val val-green">${fA(arsI)}</div>
+        <div class="sub" style="margin-top:6px">Gastos</div><div class="val val-red">${fA(arsG)}</div>
+      </div>
+      <div class="mini-card">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">${badge('USD')}<span style="font-size:12px;color:var(--text3)">Dólares</span></div>
+        <div class="sub">Ingresos</div><div class="val val-green">${fU(usdI)}</div>
+        <div class="sub" style="margin-top:6px">Gastos</div><div class="val val-red">${fU(usdG)}</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card quick-add" onclick="openForm('ingreso')" style="border-color:#00dc8230">
+        <div class="icon"><span style="color:var(--green)">↑</span><span style="color:var(--green)">Ingreso</span></div>
+        <p>Registrar cobro</p>
+      </div>
+      <div class="mini-card quick-add" onclick="openForm('gasto')" style="border-color:#ff475730">
+        <div class="icon"><span style="color:var(--red)">↓</span><span style="color:var(--red)">Gasto</span></div>
+        <p>Registrar pago</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Últimos 6 meses <span>(ARS)</span></div>
+      <div style="margin-bottom:8px"><div style="font-size:11px;color:var(--green);margin-bottom:4px">Ingresos</div>
+        <div class="bars">${bars(l6.map(d=>({label:d.label,value:d.ing})),'var(--green)')}</div></div>
+      <div style="margin-top:12px"><div style="font-size:11px;color:var(--red);margin-bottom:4px">Gastos</div>
+        <div class="bars">${bars(l6.map(d=>({label:d.label,value:d.gas})),'var(--red)')}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Gastos por categoría</div>
+      ${catSorted.length===0?'<div class="empty">Sin movimientos</div>':catSorted.map(([cat,val])=>{
+        const pct=((val/catTotal)*100).toFixed(0);
+        return `<div class="cat-row"><div class="top"><span class="name">${cat}</span><span class="amt">${fA(val)} <span class="pct">(${pct}%)</span></span></div><div class="cat-bar"><div style="width:${pct}%;background:var(--red)"></div></div></div>`;
+      }).join('')}
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="card-title" style="margin-bottom:0">Últimos movimientos</div>
+        <button class="link" onclick="goList()">Ver todos →</button>
+      </div>
+      ${recent.length===0?'<div class="empty">Tocá + para agregar tu primer movimiento</div>':recent.map(t=>`
+        <div class="txn">
+          <div class="left">
+            <div class="cat">${t.category} ${badge(t.currency,true)}${t.description&&t.description!==t.category?` <span style="font-size:12px;color:var(--text4)">· ${t.description}</span>`:''}</div>
+          </div>
+          <span class="amount" style="color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">${t.type==='ingreso'?'+':'-'}${fM(t.amount,t.currency)}</span>
+        </div>`).join('')}
+    </div>
+
+    <div class="data-actions">
+      <button onclick="exportData()">📥 Exportar datos</button>
+      <button onclick="document.getElementById('importFile').click()">📤 Importar datos</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+
+    <button class="fab" onclick="openForm()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+
+    <div class="nav">
+      <button class="active" onclick="goDash()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg><span>Dashboard</span></button>
+      <button onclick="goList()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg><span>Movimientos</span></button>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// LIST VIEW
+// ═══════════════════════════════════════════════════
+function renderList() {
+  const mt = [...mTxns()].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  app.innerHTML = `
+    <div class="header">
+      <span style="font-size:17px;font-weight:600">Movimientos</span>
+      <span style="font-size:13px;color:var(--text3)">${MO[state.month]} ${state.year}</span>
+    </div>
+    <div class="month-nav">
+      <button onclick="prevMonth()">‹</button>
+      <span class="label">${MO[state.month]} ${state.year}</span>
+      <button onclick="nextMonth()">›</button>
+    </div>
+    <div style="padding:4px 20px">
+      ${mt.length===0?'<div class="empty" style="padding:32px">No hay movimientos este mes</div>':mt.map(t=>`
+        <div class="txn">
+          <div class="left">
+            <div class="cat">${t.category} ${badge(t.currency,true)}</div>
+            <div class="desc">${t.description&&t.description!==t.category?t.description+' · ':''}${new Date(t.date+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'})}</div>
+          </div>
+          <div class="right">
+            <span class="amount" style="color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">${t.type==='ingreso'?'+':'-'}${fM(t.amount,t.currency)}</span>
+            <button onclick="editTxn('${t.id}')" style="background:none;border:none;color:var(--text4);cursor:pointer;padding:4px;display:flex">✎</button>
+            <button onclick="confirmDel('${t.id}')" style="background:none;border:none;color:var(--text4);cursor:pointer;padding:4px;display:flex">🗑</button>
+          </div>
+        </div>`).join('')}
+    </div>
+    <button class="fab" onclick="openForm()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <div class="nav">
+      <button onclick="goDash()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg><span>Dashboard</span></button>
+      <button class="active" onclick="goList()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg><span>Movimientos</span></button>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// FORM VIEW
+// ═══════════════════════════════════════════════════
+function renderForm() {
+  const f = state.form;
+  const cats = f.type==='ingreso'?CATS_IN:CATS_OUT;
+  const ac = f.type==='ingreso'?'active-green':'active';
+
+  app.innerHTML = `
+    <div class="header">
+      <span style="font-size:17px;font-weight:600">${state.editId?'Editar':'Nuevo'} movimiento</span>
+      <button onclick="closeForm()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px">✕</button>
+    </div>
+    <div class="form-page">
+      <div class="form-toggle">
+        <button onclick="setFormType('gasto')" style="background:${f.type==='gasto'?'var(--red-dim)':'var(--surface2)'};color:${f.type==='gasto'?'var(--red)':'var(--text3)'}">Gasto</button>
+        <button onclick="setFormType('ingreso')" style="background:${f.type==='ingreso'?'var(--green-dim)':'var(--surface2)'};color:${f.type==='ingreso'?'var(--green)':'var(--text3)'}">Ingreso</button>
+      </div>
+
+      <div>
+        <label class="form-label">Moneda</label>
+        <div class="form-toggle">
+          <button onclick="setFormCur('ARS')" style="border:1.5px solid ${f.currency==='ARS'?'var(--green)':'#2a2a2a'};background:${f.currency==='ARS'?'var(--green-dim)':'var(--surface2)'};color:${f.currency==='ARS'?'var(--green)':'var(--text3)'}">$ ARS</button>
+          <button onclick="setFormCur('USD')" style="border:1.5px solid ${f.currency==='USD'?'var(--blue)':'#2a2a2a'};background:${f.currency==='USD'?'var(--blue-dim)':'var(--surface2)'};color:${f.currency==='USD'?'var(--blue)':'var(--text3)'}">US$ USD</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Monto</label>
+        <div class="amount-wrap">
+          <span class="prefix" style="color:${f.currency==='USD'?'var(--blue)':'var(--green)'}">${f.currency==='USD'?'US$':'$'}</span>
+          <input type="number" inputmode="decimal" class="form-input" placeholder="0" value="${f.amount}" oninput="state.form.amount=this.value;updateEquiv()" id="amountInput">
+        </div>
+        <div class="equiv" id="equiv"></div>
+      </div>
+
+      <div>
+        <label class="form-label">Categoría</label>
+        <div class="chips">
+          ${cats.map(c=>`<button class="chip ${f.category===c?ac:''}" onclick="setFormCat('${c}')">${c}</button>`).join('')}
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Fecha</label>
+        <input type="date" class="form-input" value="${f.date}" onchange="state.form.date=this.value" style="color-scheme:dark">
+      </div>
+
+      <div>
+        <label class="form-label">Descripción <span style="color:var(--text4)">(opcional)</span></label>
+        <input type="text" class="form-input" placeholder="Ej: Netflix, cena..." value="${f.desc}" oninput="state.form.desc=this.value">
+      </div>
+
+      <button class="save-btn" onclick="handleSave()">${state.editId?'Guardar cambios':'Registrar'}</button>
+    </div>`;
+
+  updateEquiv();
+  setTimeout(()=>{const el=document.getElementById('amountInput');if(el&&!state.editId)el.focus();},200);
+}
+
+function updateEquiv() {
+  const el = document.getElementById('equiv');
+  if(!el) return;
+  if(state.form.currency==='USD' && state.form.amount) {
+    el.textContent = '≈ '+fA(parseFloat(state.form.amount)*state.xr)+' al TC oficial';
+  } else { el.textContent = ''; }
+}
+
+// ═══════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════
+function goDash() { state.view='dashboard'; render(); }
+function goList() { state.view='list'; render(); }
+
+function prevMonth() { if(state.month===0){state.month=11;state.year--;}else state.month--; render(); }
+function nextMonth() { if(state.month===11){state.month=0;state.year++;}else state.month++; render(); }
+
+function openForm(type) {
+  state.editId = null;
+  state.form = { type: type||'gasto', currency:'ARS', amount:'', category:'', desc:'', date: new Date().toISOString().slice(0,10) };
+  state.view = 'form'; render();
+}
+
+function closeForm() { state.editId=null; state.view='dashboard'; render(); }
+
+function setFormType(t) { state.form.type=t; state.form.category=''; render(); }
+function setFormCur(c) { state.form.currency=c; render(); }
+function setFormCat(c) { state.form.category=c; render(); }
+
+function handleSave() {
+  const amt = parseFloat(state.form.amount);
+  if(!amt||amt<=0) { toast('Ingresá un monto válido'); return; }
+  if(!state.form.category) { toast('Elegí una categoría'); return; }
+  const txn = {
+    id: state.editId || gid(),
+    type: state.form.type, currency: state.form.currency,
+    amount: amt, category: state.form.category,
+    description: state.form.desc, date: state.form.date,
+  };
+  if(state.editId) {
+    state.txns = state.txns.map(t=>t.id===state.editId?txn:t);
+    toast('Editado ✓');
+  } else {
+    state.txns.push(txn);
+    toast(state.form.type==='ingreso'?'Ingreso guardado ✓':'Gasto guardado ✓');
+  }
+  save();
+  state.editId=null; state.view='dashboard'; render();
+}
+
+function editTxn(id) {
+  const t = state.txns.find(x=>x.id===id);
+  if(!t) return;
+  state.editId = t.id;
+  state.form = { type:t.type, currency:t.currency, amount:t.amount.toString(), category:t.category, desc:t.description||'', date:t.date };
+  state.view='form'; render();
+}
+
+function confirmDel(id) {
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.onclick = () => bg.remove();
+  bg.innerHTML = `<div class="modal" onclick="event.stopPropagation()">
+    <p>¿Eliminar este movimiento?</p>
+    <div class="btns">
+      <button class="btn-cancel" onclick="this.closest('.modal-bg').remove()">Cancelar</button>
+      <button class="btn-danger" onclick="delTxn('${id}');this.closest('.modal-bg').remove()">Eliminar</button>
+    </div></div>`;
+  document.body.appendChild(bg);
+}
+
+function delTxn(id) {
+  state.txns = state.txns.filter(t=>t.id!==id);
+  save(); toast('Eliminado ✓'); render();
+}
+
+function editRate() {
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.onclick = () => bg.remove();
+  bg.innerHTML = `<div class="modal" onclick="event.stopPropagation()">
+    <p style="font-weight:600;margin-bottom:4px">Tipo de cambio</p>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:16px">Ingresá el dólar oficial</p>
+    <input type="number" inputmode="decimal" class="form-input" value="${state.xr}" id="rateModalInput" style="font-size:22px;font-weight:700;text-align:center;margin-bottom:16px">
+    <div class="btns">
+      <button class="btn-cancel" onclick="this.closest('.modal-bg').remove()">Cancelar</button>
+      <button class="btn-primary" onclick="saveRate()">Guardar</button>
+    </div></div>`;
+  document.body.appendChild(bg);
+}
+
+function saveRate() {
+  const v = parseFloat(document.getElementById('rateModalInput').value);
+  if(v>0) { state.xr=v; save(); toast('TC: $'+v.toLocaleString('es-AR')); }
+  document.querySelector('.modal-bg').remove();
+  render();
+}
+
+// ── Export / Import ──
+function exportData() {
+  const blob = new Blob([JSON.stringify({txns:state.txns,xr:state.xr,exported:new Date().toISOString()},null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'mis-finanzas-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(url);
+  toast('Backup exportado ✓');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if(d.txns) {
+        // Merge: add only txns with new IDs
+        const existingIds = new Set(state.txns.map(t=>t.id));
+        let added = 0;
+        d.txns.forEach(t => { if(!existingIds.has(t.id)) { state.txns.push(t); added++; } });
+        if(d.xr) state.xr = d.xr;
+        save(); render();
+        toast(`Importados ${added} movimientos ✓`);
+      }
+    } catch(err) { toast('Error al importar'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+load();
+render();
+</script>
+</body>
+</html>
