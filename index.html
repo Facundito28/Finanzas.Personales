@@ -191,6 +191,12 @@ document.getElementById('btnSignup').addEventListener('click', function(){ start
 document.getElementById('btnLogin').addEventListener('click', function(){ startAuth('login') });
 
 function startAuth(mode) {
+  // Si la app ya se inició en el fondo, usamos tu función global
+  if (typeof window._goAuth === 'function') {
+    window._goAuth(mode);
+    return;
+  }
+  
   document.getElementById('landing').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('app').innerHTML = '<div class="loading"><div class="logo2" style="font-size:24px">mis finanzas</div><div class="spin"></div><p style="color:#666;font-size:13px;margin-top:8px">Cargando...</p></div>';
