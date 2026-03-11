@@ -271,6 +271,7 @@ function initApp(pendingMode) {
     }catch(e){if(pendingMode){S.aMode=pendingMode;S.view='auth'}else{S.view='landing'}}
     render();
     sb.auth.onAuthStateChange(async function(ev,session){
+      if (ev === 'INITIAL_SESSION') return; // <-- ESTA LÍNEA EVITA EL REBOTE
       if(session){S.user=session.user;await loadData();S.view='dashboard';render()}
       else{S.user=null;S.txns=[];S.view='landing';render()}
     });
