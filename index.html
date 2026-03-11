@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Mis Finanzas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#0a0a0a;--s:#141414;--s2:#1a1a1a;--brd:#1e1e1e;--t:#f0f0f0;--t2:#aaa;--t3:#666;--t4:#444;--g:#00dc82;--gd:#00dc8220;--r:#ff4757;--rd:#ff475720;--b:#3b82f6;--bd:#3b82f620;--acc:linear-gradient(135deg,#00dc82,#3b82f6);--rad:16px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{font-family:'Plus Jakarta Sans',-apple-system,sans-serif;background:var(--bg);color:var(--t);min-height:100vh;-webkit-font-smoothing:antialiased}
+body{max-width:480px;margin:0 auto;padding-bottom:100px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+
+.hdr{padding:20px 20px 8px;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:20px;font-weight:800;background:var(--acc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-r{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t3)}
+.hdr-r button{background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px;font-family:inherit;padding:4px 8px;border-radius:6px}
+.hdr-r button:hover{color:var(--r)}
+
+.rb{margin:4px 16px 0;padding:10px 16px;border-radius:12px;background:var(--s);border:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between}
+.rb .l{font-size:12px;color:var(--t3)}.rb .v{font-size:15px;font-weight:700;color:var(--b);font-variant-numeric:tabular-nums;margin-left:8px}
+.rb .a{display:flex;gap:4px}.rb .a button{background:none;border:none;color:var(--t3);cursor:pointer;padding:4px;font-size:14px}
+
+.mn{display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 20px 6px}
+.mn button{background:none;border:none;color:var(--t3);cursor:pointer;padding:4px;font-size:18px}
+.mn .l{font-size:15px;font-weight:600;color:#ccc;min-width:150px;text-align:center}
+
+.cd{background:var(--s);border-radius:var(--rad);padding:18px 20px;margin:10px 16px;border:1px solid var(--brd)}
+.ct{font-size:11px;font-weight:600;color:var(--t3);letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase}
+.ct span{color:var(--t4);text-transform:none;letter-spacing:0}
+.bal{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.bal.pos{color:var(--g)}.bal.neg{color:var(--r)}
+
+.g2{display:flex;gap:10px;padding:0 16px}.g2>div{flex:1}
+.mc{background:var(--s);border-radius:14px;padding:14px 16px;border:1px solid var(--brd)}
+.bdg{display:inline-flex;align-items:center;font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:6px}
+.bdg-a{background:var(--gd);color:var(--g);border:1px solid #00dc8240}
+.bdg-u{background:var(--bd);color:var(--b);border:1px solid #3b82f640}
+.sub{font-size:10px;color:var(--t3);margin-top:2px}.vl{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.vg{color:var(--g)}.vr{color:var(--r)}
+
+.qa{cursor:pointer;transition:border-color .2s}.qa:hover{border-color:#fff2}
+.qa .ic{display:flex;align-items:center;gap:8px}.qa .ic span:last-child{font-size:14px;font-weight:600}
+.qa p{font-size:11px;color:var(--t3);margin-top:4px}
+
+.bars{display:flex;align-items:flex-end;gap:3px;height:48px}
+.bars .c{display:flex;flex-direction:column;align-items:center;flex:1}
+.bars .b{width:100%;max-width:28px;border-radius:4px;transition:height .3s}
+.bars .lb{font-size:9px;color:var(--t3);margin-top:2px}
+
+.cr{margin-bottom:6px}.cr .tp{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px}
+.cr .nm{color:#e0e0e0}.cr .am{color:var(--t2);font-variant-numeric:tabular-nums}.cr .pc{font-size:11px;color:var(--t3)}
+.cb{height:6px;background:var(--s2);border-radius:3px;overflow:hidden}.cb div{height:100%;border-radius:3px;transition:width .4s}
+
+.tx{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--brd)}
+.tx:last-child{border-bottom:none}.tx .lf{flex:1}
+.tx .ct2{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
+.tx .ct2 .bdg{font-size:8px;padding:1px 5px}
+.tx .ds{font-size:12px;color:var(--t3);margin-top:2px}
+.tx .rt{display:flex;align-items:center;gap:8px}
+.tx .am2{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.tx .rt button{background:none;border:none;color:var(--t4);cursor:pointer;padding:4px;font-size:13px}
+.lnk{font-size:12px;color:var(--b);background:none;border:none;cursor:pointer;font-weight:500;font-family:inherit}
+
+.fab{position:fixed;bottom:80px;right:calc(50% - 210px);width:56px;height:56px;border-radius:50%;background:var(--acc);border:none;color:#000;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(0,220,130,.3);z-index:100;transition:transform .2s;font-size:24px}
+.fab:active{transform:scale(.9)}
+@media(max-width:480px){.fab{right:20px}}
+
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--bg);border-top:1px solid var(--brd);display:flex;justify-content:center;gap:48px;padding:12px 0 max(20px,env(safe-area-inset-bottom));z-index:99}
+.nav button{background:none;border:none;color:var(--t4);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit}
+.nav button.on{color:var(--g)}
+
+.fp{padding:12px 20px;display:flex;flex-direction:column;gap:18px}
+.ft{display:flex;gap:8px}
+.ft button{flex:1;padding:12px;border-radius:12px;border:none;cursor:pointer;font-weight:600;font-size:15px;font-family:inherit}
+.fl{font-size:11px;color:var(--t3);margin-bottom:6px;display:block;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.fi{width:100%;padding:14px 16px;background:var(--s2);border:1px solid #2a2a2a;border-radius:12px;color:var(--t);font-size:16px;outline:none;font-family:inherit}
+.fi:focus{border-color:var(--b)}
+.aw{position:relative}.aw .pf{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:20px;font-weight:600}
+.aw input{padding-left:60px;font-size:28px;font-weight:700;letter-spacing:-1px}
+.cps{display:flex;flex-wrap:wrap;gap:8px}
+.cp{padding:8px 16px;border-radius:20px;border:1.5px solid #2a2a2a;background:transparent;color:var(--t3);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;font-family:inherit}
+.cp.on{border-color:var(--b);background:var(--bd);color:var(--b)}
+.cp.ong{border-color:var(--g);background:var(--gd);color:var(--g)}
+.sv{width:100%;padding:16px;background:var(--acc);border:none;border-radius:14px;color:#000;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.sv:disabled{opacity:.5}
+.eq{font-size:12px;color:var(--t3);margin-top:6px;padding-left:4px}
+
+.mbg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:200}
+.mdl{background:var(--s2);border-radius:var(--rad);padding:24px;width:300px;border:1px solid #2a2a2a}
+.mdl p{font-size:15px;font-weight:500;margin-bottom:16px;text-align:center}
+.mdl .bs{display:flex;gap:10px}.mdl .bs button{flex:1;padding:12px;border-radius:10px;cursor:pointer;font-weight:500;font-family:inherit;font-size:14px}
+.bc{border:1px solid #333;background:transparent;color:var(--t2)}
+.bd{border:none;background:var(--r);color:#fff;font-weight:600}
+.bp{border:none;background:var(--acc);color:#000;font-weight:600}
+
+.tst{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#222;color:var(--g);padding:10px 24px;border-radius:12px;font-size:14px;font-weight:500;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:ti .3s;pointer-events:none}
+@keyframes ti{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.emp{text-align:center;color:var(--t4);padding:24px;font-size:13px}
+
+/* Auth page */
+.auth-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-box{width:100%;max-width:360px}
+.auth-box .logo{font-size:28px;text-align:center;display:block;margin-bottom:8px}
+.auth-box .sub{text-align:center;color:var(--t3);font-size:14px;margin-bottom:32px}
+.auth-box .fi{margin-bottom:12px}
+.auth-box .sv{margin-top:8px;margin-bottom:12px}
+.auth-switch{text-align:center;font-size:13px;color:var(--t3)}
+.auth-switch button{background:none;border:none;color:var(--b);cursor:pointer;font-family:inherit;font-size:13px;font-weight:600}
+.auth-err{background:#ff475720;color:var(--r);padding:10px 16px;border-radius:10px;font-size:13px;margin-bottom:12px;text-align:center}
+.auth-ok{background:var(--gd);color:var(--g);padding:10px 16px;border-radius:10px;font-size:13px;margin-bottom:12px;text-align:center}
+.loading{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:12px}
+.loading .logo{font-size:24px}
+.spin{width:24px;height:24px;border:3px solid var(--brd);border-top-color:var(--g);border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ═══════════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════════
+const SUPA_URL = 'https://ymeatgyyskhqvmxyrmjw.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltZWF0Z3l5c2tocXZteHlybWp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzI3MDEsImV4cCI6MjA4ODgwODcwMX0.le4zOIpcyOGXQOJJE1gImy_L_V9VTwHrFxT2TzKLn8I';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const CI = ['Sueldo','Freelance','Inversiones','Otros'];
+const CO = ['Alquiler/Expensas','Supermercado','Delivery/Comida','Transporte','Salidas','Suscripciones','Ropa','Salud','Educación','Ahorro/Inversión','Otros'];
+const MO = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+let S = { user:null, txns:[], xr:1080, view:'loading', month:new Date().getMonth(), year:new Date().getFullYear(),
+  editId:null, form:{type:'gasto',currency:'ARS',amount:'',category:'',desc:'',date:new Date().toISOString().slice(0,10)},
+  authMode:'login', authErr:'', authOk:'', authLoading:false };
+
+const $ = id => document.getElementById(id);
+const app = document.getElementById('app');
+let tt;
+
+function fA(n){return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n)}
+function fU(n){return'US$ '+new Intl.NumberFormat('en-US',{maximumFractionDigits:2,minimumFractionDigits:2}).format(n)}
+function fM(n,c){return c==='USD'?fU(n):fA(n)}
+function gid(){return crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
+function toast(m){let t=document.querySelector('.tst');if(t)t.remove();t=document.createElement('div');t.className='tst';t.textContent=m;document.body.appendChild(t);clearTimeout(tt);tt=setTimeout(()=>t.remove(),2200)}
+function bdg(c,sm){const u=c==='USD';return`<span class="bdg ${u?'bdg-u':'bdg-a'}" style="font-size:${sm?8:10}px;padding:${sm?'1px 5px':'2px 7px'}">${u?'USD':'ARS'}</span>`}
+
+// ═══════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════
+async function initAuth() {
+  const {data:{session}} = await sb.auth.getSession();
+  if(session) { S.user=session.user; await loadData(); S.view='dashboard'; }
+  else { S.view='auth'; }
+  render();
+  sb.auth.onAuthStateChange(async(ev,session)=>{
+    if(session){S.user=session.user;await loadData();S.view='dashboard';render();}
+    else{S.user=null;S.txns=[];S.view='auth';render();}
+  });
+}
+
+async function doSignup(email,pass) {
+  S.authLoading=true;S.authErr='';S.authOk='';render();
+  const{error}=await sb.auth.signUp({email,password:pass});
+  S.authLoading=false;
+  if(error){S.authErr=error.message;render();return;}
+  S.authOk='Revisá tu email para confirmar la cuenta. Si no llega, revisá spam.';render();
+}
+
+async function doLogin(email,pass) {
+  S.authLoading=true;S.authErr='';render();
+  const{error}=await sb.auth.signInWithPassword({email,password:pass});
+  S.authLoading=false;
+  if(error){S.authErr=error.message==='Invalid login credentials'?'Email o contraseña incorrectos':error.message;render();}
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  S.user=null;S.txns=[];S.view='auth';S.authErr='';S.authOk='';render();
+}
+
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+async function loadData() {
+  const{data}=await sb.from('transactions').select('*').eq('user_id',S.user.id).order('date',{ascending:false});
+  S.txns=(data||[]).map(t=>({id:t.id,type:t.type,currency:t.currency,amount:Number(t.amount),category:t.category,description:t.description||'',date:t.date,tc:Number(t.tc_oficial)||0}));
+  const{data:settings}=await sb.from('user_settings').select('*').eq('user_id',S.user.id).single();
+  if(settings) S.xr=Number(settings.exchange_rate)||1080;
+}
+
+async function saveTxn(txn) {
+  const row = {user_id:S.user.id,type:txn.type,currency:txn.currency,amount:txn.amount,category:txn.category,description:txn.description,date:txn.date,tc_oficial:txn.currency==='USD'?S.xr:0};
+  if(S.editId) {
+    await sb.from('transactions').update(row).eq('id',S.editId).eq('user_id',S.user.id);
+    S.txns=S.txns.map(t=>t.id===S.editId?{...txn,id:S.editId}:t);
+  } else {
+    const{data}=await sb.from('transactions').insert(row).select().single();
+    if(data) S.txns.unshift({...txn,id:data.id});
+  }
+}
+
+async function delTxn(id) {
+  await sb.from('transactions').delete().eq('id',id).eq('user_id',S.user.id);
+  S.txns=S.txns.filter(t=>t.id!==id);
+}
+
+async function saveXR(rate) {
+  S.xr=rate;
+  await sb.from('user_settings').upsert({user_id:S.user.id,exchange_rate:rate,updated_at:new Date().toISOString()});
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function render() {
+  if(S.view==='loading') return renderLoading();
+  if(S.view==='auth') return renderAuth();
+  if(S.view==='form') return renderForm();
+  if(S.view==='list') return renderList();
+  renderDash();
+}
+
+function renderLoading(){app.innerHTML=`<div class="loading"><div class="logo">mis finanzas</div><div class="spin"></div></div>`}
+
+// ── AUTH ──
+function renderAuth(){
+  const isLogin = S.authMode==='login';
+  app.innerHTML=`<div class="auth-page"><div class="auth-box">
+    <div class="logo">mis finanzas</div>
+    <div class="sub">${isLogin?'Iniciá sesión para ver tus datos':'Creá tu cuenta gratis'}</div>
+    ${S.authErr?`<div class="auth-err">${S.authErr}</div>`:''}
+    ${S.authOk?`<div class="auth-ok">${S.authOk}</div>`:''}
+    <input class="fi" type="email" id="aEmail" placeholder="Email" value="${S.user?.email||''}" autocapitalize="none" autocomplete="email">
+    <input class="fi" type="password" id="aPass" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="${isLogin?'current-password':'new-password'}">
+    <button class="sv" id="aBtn" ${S.authLoading?'disabled':''}>${S.authLoading?'Cargando...':isLogin?'Iniciar sesión':'Crear cuenta'}</button>
+    <div class="auth-switch">${isLogin?'¿No tenés cuenta?':'¿Ya tenés cuenta?'} <button id="aSwitch">${isLogin?'Registrate':'Iniciá sesión'}</button></div>
+  </div></div>`;
+  $('aBtn').onclick=()=>{
+    const e=$('aEmail').value.trim(),p=$('aPass').value;
+    if(!e||!p){S.authErr='Completá email y contraseña';render();return;}
+    if(!isLogin&&p.length<6){S.authErr='La contraseña debe tener al menos 6 caracteres';render();return;}
+    isLogin?doLogin(e,p):doSignup(e,p);
+  };
+  $('aSwitch').onclick=()=>{S.authMode=isLogin?'signup':'login';S.authErr='';S.authOk='';render()};
+  $('aPass').onkeydown=(e)=>{if(e.key==='Enter')$('aBtn').click()};
+}
+
+// ── HELPERS ──
+function mTxns(){return S.txns.filter(t=>{const d=new Date(t.date);return d.getMonth()===S.month&&d.getFullYear()===S.year})}
+
+function barsH(data,color){
+  const mx=Math.max(...data.map(d=>d.v),1);
+  return data.map(d=>`<div class="c"><div class="b" style="height:${Math.max(4,(d.v/mx)*44)}px;background:${color};opacity:${d.v===0?.2:1}"></div><span class="lb">${d.l}</span></div>`).join('');
+}
+
+// ── DASHBOARD ──
+function renderDash(){
+  const mt=mTxns();
+  const ai=mt.filter(t=>t.type==='ingreso'&&t.currency==='ARS').reduce((s,t)=>s+t.amount,0);
+  const ui=mt.filter(t=>t.type==='ingreso'&&t.currency==='USD').reduce((s,t)=>s+t.amount,0);
+  const ag=mt.filter(t=>t.type==='gasto'&&t.currency==='ARS').reduce((s,t)=>s+t.amount,0);
+  const ug=mt.filter(t=>t.type==='gasto'&&t.currency==='USD').reduce((s,t)=>s+t.amount,0);
+  const bl=(ai+ui*S.xr)-(ag+ug*S.xr);
+
+  let l6=[];for(let i=5;i>=0;i--){let m=S.month-i,y=S.year;if(m<0){m+=12;y--}
+    const ts=S.txns.filter(t=>{const d=new Date(t.date);return d.getMonth()===m&&d.getFullYear()===y});
+    l6.push({l:MO[m].slice(0,3),ig:ts.filter(t=>t.type==='ingreso').reduce((s,t)=>s+(t.currency==='USD'?t.amount*S.xr:t.amount),0),
+      gs:ts.filter(t=>t.type==='gasto').reduce((s,t)=>s+(t.currency==='USD'?t.amount*S.xr:t.amount),0)})}
+
+  const ct={};mt.filter(t=>t.type==='gasto').forEach(t=>{const v=t.currency==='USD'?t.amount*S.xr:t.amount;ct[t.category]=(ct[t.category]||0)+v});
+  const cs=Object.entries(ct).sort((a,b)=>b[1]-a[1]);const ctot=cs.reduce((s,[,v])=>s+v,0)||1;
+  const rec=[...mt].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+
+  app.innerHTML=`
+  <div class="hdr"><div class="logo">mis finanzas</div><div class="hdr-r"><span>${S.txns.length} mov.</span><button onclick="doLogout()">Salir</button></div></div>
+  <div class="rb"><div style="display:flex;align-items:center;gap:8px"><span class="l">TC Oficial</span><span class="v">$${S.xr.toLocaleString('es-AR')}</span></div>
+    <div class="a"><button onclick="editRate()">⚙</button></div></div>
+  <div class="mn"><button onclick="pM()">‹</button><span class="l">${MO[S.month]} ${S.year}</span><button onclick="nM()">›</button></div>
+
+  <div class="cd"><div class="ct">Balance consolidado <span>(en ARS)</span></div>
+    <div class="bal ${bl>=0?'pos':'neg'}">${bl>=0?'+':''}${fA(bl)}</div></div>
+
+  <div class="g2">
+    <div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">${bdg('ARS')}<span style="font-size:12px;color:var(--t3)">Pesos</span></div>
+      <div class="sub">Ingresos</div><div class="vl vg">${fA(ai)}</div><div class="sub" style="margin-top:6px">Gastos</div><div class="vl vr">${fA(ag)}</div></div>
+    <div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">${bdg('USD')}<span style="font-size:12px;color:var(--t3)">Dólares</span></div>
+      <div class="sub">Ingresos</div><div class="vl vg">${fU(ui)}</div><div class="sub" style="margin-top:6px">Gastos</div><div class="vl vr">${fU(ug)}</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="mc qa" onclick="oF('ingreso')" style="border-color:#00dc8230"><div class="ic"><span style="color:var(--g)">↑</span><span style="color:var(--g)">Ingreso</span></div><p>Registrar cobro</p></div>
+    <div class="mc qa" onclick="oF('gasto')" style="border-color:#ff475730"><div class="ic"><span style="color:var(--r)">↓</span><span style="color:var(--r)">Gasto</span></div><p>Registrar pago</p></div>
+  </div>
+
+  <div class="cd"><div class="ct">Últimos 6 meses <span>(ARS)</span></div>
+    <div style="margin-bottom:8px"><div style="font-size:11px;color:var(--g);margin-bottom:4px">Ingresos</div><div class="bars">${barsH(l6.map(d=>({l:d.l,v:d.ig})),'var(--g)')}</div></div>
+    <div style="margin-top:12px"><div style="font-size:11px;color:var(--r);margin-bottom:4px">Gastos</div><div class="bars">${barsH(l6.map(d=>({l:d.l,v:d.gs})),'var(--r)')}</div></div></div>
+
+  <div class="cd"><div class="ct">Gastos por categoría</div>
+    ${cs.length===0?'<div class="emp">Sin movimientos</div>':cs.map(([c,v])=>{const p=((v/ctot)*100).toFixed(0);
+      return`<div class="cr"><div class="tp"><span class="nm">${c}</span><span class="am">${fA(v)} <span class="pc">(${p}%)</span></span></div><div class="cb"><div style="width:${p}%;background:var(--r)"></div></div></div>`}).join('')}</div>
+
+  <div class="cd">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="ct" style="margin-bottom:0">Últimos movimientos</div><button class="lnk" onclick="gL()">Ver todos →</button></div>
+    ${rec.length===0?'<div class="emp">Tocá + para agregar tu primer movimiento</div>':rec.map(t=>`<div class="tx"><div class="lf"><div class="ct2">${t.category} ${bdg(t.currency,1)}${t.description&&t.description!==t.category?` <span style="font-size:12px;color:var(--t4)">· ${t.description}</span>`:''}</div></div>
+      <span class="am2" style="color:${t.type==='ingreso'?'var(--g)':'var(--r)'}">${t.type==='ingreso'?'+':'-'}${fM(t.amount,t.currency)}</span></div>`).join('')}</div>
+
+  <button class="fab" onclick="oF()">+</button>
+  <div class="nav"><button class="on" onclick="gD()">📊<span>Dashboard</span></button><button onclick="gL()">📋<span>Movimientos</span></button></div>`;
+}
+
+// ── LIST ──
+function renderList(){
+  const mt=[...mTxns()].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  app.innerHTML=`
+  <div class="hdr"><span style="font-size:17px;font-weight:600">Movimientos</span><span style="font-size:13px;color:var(--t3)">${MO[S.month]} ${S.year}</span></div>
+  <div class="mn"><button onclick="pM()">‹</button><span class="l">${MO[S.month]} ${S.year}</span><button onclick="nM()">›</button></div>
+  <div style="padding:4px 20px">
+    ${mt.length===0?'<div class="emp" style="padding:32px">No hay movimientos este mes</div>':mt.map(t=>`<div class="tx"><div class="lf"><div class="ct2">${t.category} ${bdg(t.currency,1)}</div>
+      <div class="ds">${t.description&&t.description!==t.category?t.description+' · ':''}${new Date(t.date+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'})}</div></div>
+      <div class="rt"><span class="am2" style="color:${t.type==='ingreso'?'var(--g)':'var(--r)'}">${t.type==='ingreso'?'+':'-'}${fM(t.amount,t.currency)}</span>
+      <button onclick="eT('${t.id}')">✎</button><button onclick="cD('${t.id}')">🗑</button></div></div>`).join('')}</div>
+  <button class="fab" onclick="oF()">+</button>
+  <div class="nav"><button onclick="gD()">📊<span>Dashboard</span></button><button class="on" onclick="gL()">📋<span>Movimientos</span></button></div>`;
+}
+
+// ── FORM ──
+function renderForm(){
+  const f=S.form,cats=f.type==='ingreso'?CI:CO,ac=f.type==='ingreso'?'ong':'on';
+  app.innerHTML=`
+  <div class="hdr"><span style="font-size:17px;font-weight:600">${S.editId?'Editar':'Nuevo'} movimiento</span>
+    <button onclick="cF()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:20px">✕</button></div>
+  <div class="fp">
+    <div class="ft"><button onclick="sT('gasto')" style="background:${f.type==='gasto'?'var(--rd)':'var(--s2)'};color:${f.type==='gasto'?'var(--r)':'var(--t3)'}">Gasto</button>
+      <button onclick="sT('ingreso')" style="background:${f.type==='ingreso'?'var(--gd)':'var(--s2)'};color:${f.type==='ingreso'?'var(--g)':'var(--t3)'}">Ingreso</button></div>
+    <div><label class="fl">Moneda</label><div class="ft">
+      <button onclick="sC('ARS')" style="border:1.5px solid ${f.currency==='ARS'?'var(--g)':'#2a2a2a'};background:${f.currency==='ARS'?'var(--gd)':'var(--s2)'};color:${f.currency==='ARS'?'var(--g)':'var(--t3)'}">$ ARS</button>
+      <button onclick="sC('USD')" style="border:1.5px solid ${f.currency==='USD'?'var(--b)':'#2a2a2a'};background:${f.currency==='USD'?'var(--bd)':'var(--s2)'};color:${f.currency==='USD'?'var(--b)':'var(--t3)'}">US$ USD</button></div></div>
+    <div><label class="fl">Monto</label><div class="aw"><span class="pf" style="color:${f.currency==='USD'?'var(--b)':'var(--g)'}">${f.currency==='USD'?'US$':'$'}</span>
+      <input type="number" inputmode="decimal" class="fi" placeholder="0" value="${f.amount}" oninput="S.form.amount=this.value;uEq()" id="amt"></div>
+      <div class="eq" id="eq"></div></div>
+    <div><label class="fl">Categoría</label><div class="cps">${cats.map(c=>`<button class="cp ${f.category===c?ac:''}" onclick="sCat('${c}')">${c}</button>`).join('')}</div></div>
+    <div><label class="fl">Fecha</label><input type="date" class="fi" value="${f.date}" onchange="S.form.date=this.value" style="color-scheme:dark"></div>
+    <div><label class="fl">Descripción <span style="color:var(--t4)">(opcional)</span></label><input type="text" class="fi" placeholder="Ej: Netflix, cena..." value="${f.desc}" oninput="S.form.desc=this.value"></div>
+    <button class="sv" onclick="hS()" id="saveBtn">${S.editId?'Guardar cambios':'Registrar'}</button>
+  </div>`;
+  uEq();
+  setTimeout(()=>{const e=$('amt');if(e&&!S.editId)e.focus()},200);
+}
+
+function uEq(){const e=$('eq');if(!e)return;e.textContent=S.form.currency==='USD'&&S.form.amount?'≈ '+fA(parseFloat(S.form.amount)*S.xr)+' al TC oficial':''}
+
+// ═══════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════
+function gD(){S.view='dashboard';render()}
+function gL(){S.view='list';render()}
+function pM(){if(S.month===0){S.month=11;S.year--}else S.month--;render()}
+function nM(){if(S.month===11){S.month=0;S.year++}else S.month++;render()}
+
+function oF(type){S.editId=null;S.form={type:type||'gasto',currency:'ARS',amount:'',category:'',desc:'',date:new Date().toISOString().slice(0,10)};S.view='form';render()}
+function cF(){S.editId=null;S.view='dashboard';render()}
+function sT(t){S.form.type=t;S.form.category='';render()}
+function sC(c){S.form.currency=c;render()}
+function sCat(c){S.form.category=c;render()}
+
+async function hS(){
+  const amt=parseFloat(S.form.amount);
+  if(!amt||amt<=0){toast('Ingresá un monto válido');return}
+  if(!S.form.category){toast('Elegí una categoría');return}
+  const btn=$('saveBtn');if(btn){btn.disabled=true;btn.textContent='Guardando...';}
+  const txn={type:S.form.type,currency:S.form.currency,amount:amt,category:S.form.category,description:S.form.desc,date:S.form.date};
+  await saveTxn(txn);
+  toast(S.editId?'Editado ✓':S.form.type==='ingreso'?'Ingreso guardado ✓':'Gasto guardado ✓');
+  S.editId=null;S.view='dashboard';render();
+}
+
+function eT(id){
+  const t=S.txns.find(x=>x.id===id);if(!t)return;
+  S.editId=t.id;S.form={type:t.type,currency:t.currency,amount:t.amount.toString(),category:t.category,desc:t.description||'',date:t.date};
+  S.view='form';render();
+}
+
+function cD(id){
+  const bg=document.createElement('div');bg.className='mbg';bg.onclick=()=>bg.remove();
+  bg.innerHTML=`<div class="mdl" onclick="event.stopPropagation()"><p>¿Eliminar este movimiento?</p><div class="bs">
+    <button class="bc" onclick="this.closest('.mbg').remove()">Cancelar</button>
+    <button class="bd" onclick="dT('${id}');this.closest('.mbg').remove()">Eliminar</button></div></div>`;
+  document.body.appendChild(bg);
+}
+
+async function dT(id){await delTxn(id);toast('Eliminado ✓');render()}
+
+function editRate(){
+  const bg=document.createElement('div');bg.className='mbg';bg.onclick=()=>bg.remove();
+  bg.innerHTML=`<div class="mdl" onclick="event.stopPropagation()"><p style="font-weight:600;margin-bottom:4px">Tipo de cambio</p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:16px">Ingresá el dólar oficial</p>
+    <input type="number" inputmode="decimal" class="fi" value="${S.xr}" id="ri" style="font-size:22px;font-weight:700;text-align:center;margin-bottom:16px">
+    <div class="bs"><button class="bc" onclick="this.closest('.mbg').remove()">Cancelar</button>
+    <button class="bp" onclick="sR()">Guardar</button></div></div>`;
+  document.body.appendChild(bg);
+}
+
+async function sR(){
+  const v=parseFloat($('ri').value);
+  if(v>0){await saveXR(v);toast('TC: $'+v.toLocaleString('es-AR'))}
+  document.querySelector('.mbg').remove();render();
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+initAuth();
+</script>
+</body>
+</html>
