@@ -20,7 +20,16 @@ button,input,select{font-family:var(--ff)}
 
 /* Landing */
 .land{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;position:relative;overflow:hidden}
-.land::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 40%,#00dc8208 0%,transparent 50%),radial-gradient(circle at 70% 60%,#3b82f608 0%,transparent 50%);pointer-events:none}
+.land::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 40%, #00dc8208 0%, transparent 50%), radial-gradient(circle at 70% 60%, #3b82f608 0%, transparent 50%);
+    z-index: -1;
+}
 .land-logo{font-size:42px;font-weight:800;background:var(--acc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;letter-spacing:-1.5px}
 .land-sub{font-size:16px;color:var(--t2);margin-bottom:40px;max-width:320px;line-height:1.5}
 .land-features{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px;margin-bottom:40px;text-align:left}
