@@ -399,7 +399,6 @@ function initApp(pendingMode) {
     });
   }
 
-  window._signup=async function(e,p){S.aLoad=true;S.aErr='';S.aOk='';render();try{var r=await sb.auth.signUp({email:e,password:p});S.aLoad=false;if(r.error){S.aErr=r.error.message;render();return}S.aOk='Revisá tu email para confirmar la cuenta (mirá spam también).';render()}catch(err){S.aLoad=false;S.aErr='Error de conexión. Intentá de nuevo.';render()}};
   window._login=async function(e,p){S.aLoad=true;S.aErr='';render();try{var r=await sb.auth.signInWithPassword({email:e,password:p});S.aLoad=false;if(r.error){S.aErr=r.error.message==='Invalid login credentials'?'Email o contraseña incorrectos':r.error.message;render()}}catch(err){S.aLoad=false;S.aErr='Error de conexión. Intentá de nuevo.';render()}};
   window._logout=async function(){try{await sb.auth.signOut()}catch(e){}S.user=null;S.txns=[];S.view='landing';render()};
   window._reset=async function(e){try{var r=await sb.auth.resetPasswordForEmail(e);if(r.error){S.aErr=r.error.message;render();return}S.aOk='Te enviamos un link para resetear tu contraseña.';render()}catch(err){S.aErr='Error de conexión.';render()}};
