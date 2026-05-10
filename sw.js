@@ -1,5 +1,5 @@
 // Service Worker - Mis Finanzas PWA
-const CACHE_NAME = 'mis-finanzas-v7';
+const CACHE_NAME = 'mis-finanzas-v8';
 const PRECACHE = [
   './',
   './index.html'
@@ -70,6 +70,38 @@ self.addEventListener('fetch', function(e) {
       return response;
     }).catch(function() {
       return caches.match(e.request);
+    })
+  );
+});
+
+// Web Push: notif que llega aunque la app esté cerrada
+self.addEventListener('push', function(e) {
+  var data = {};
+  try { data = e.data ? e.data.json() : {}; } catch(_) { data = { title: e.data && e.data.text() }; }
+  var title = data.title || '¿Cargaste lo de hoy? 💰';
+  var body = data.body || 'Apuntá tus gastos antes de que se te olviden.';
+  var url = data.url || '/';
+  e.waitUntil(self.registration.showNotification(title, {
+    body: body,
+    icon: 'icon-192x192.png',
+    badge: 'icon-192x192.png',
+    tag: 'mf-daily-reminder',
+    renotify: false,
+    data: { url: url },
+    requireInteraction: false
+  }));
+});
+
+self.addEventListener('notificationclick', function(e) {
+  e.notification.close();
+  var target = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
+      for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        if (c.url.indexOf(target) >= 0 && 'focus' in c) return c.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(target);
     })
   );
 });
