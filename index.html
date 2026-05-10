@@ -349,6 +349,58 @@ button,input,select{font-family:var(--ff)}
 .img-zoom{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px;animation:fadeIn .2s}
 .img-zoom img{max-width:100%;max-height:100%;border-radius:var(--r-md);box-shadow:var(--sh-3)}
 .img-zoom .img-close{position:absolute;top:max(20px,env(safe-area-inset-top));right:20px;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+
+/* === Atajos rápidos (quick templates) === */
+.qt-row{display:flex;gap:8px;padding:0 16px;margin-top:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:none}
+.qt-row::-webkit-scrollbar{display:none}
+.qt-card{flex:0 0 auto;min-width:140px;max-width:180px;background:var(--s);border:1px solid var(--brd);border-radius:var(--r-md);padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:4px;scroll-snap-align:start;-webkit-tap-highlight-color:transparent;transition:transform var(--m-instant),border-color var(--m-fast);min-height:74px;text-align:left}
+.qt-card:active{transform:scale(.96);border-color:var(--g2)}
+.qt-card:focus-visible{border-color:var(--g);outline:none}
+.qt-ico{font-size:18px;margin-bottom:2px}
+.qt-cat{font-size:12px;color:var(--t3);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qt-amt{font-size:14px;color:var(--t);font-weight:700;font-variant-numeric:tabular-nums}
+.qt-section-title{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:14px 16px 4px;display:flex;justify-content:space-between;align-items:baseline}
+.qt-section-title em{font-size:10px;color:var(--t4);font-style:normal;font-weight:500;text-transform:none;letter-spacing:0}
+
+/* === Settings: toggles fila === */
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:var(--s);border:1px solid var(--brd);border-radius:var(--r-md);margin-bottom:8px;min-height:var(--tap)}
+.set-row .set-info{flex:1;min-width:0}
+.set-row .set-label{font-size:14px;color:var(--t);font-weight:500}
+.set-row .set-sub{font-size:12px;color:var(--t3);margin-top:2px;line-height:1.4}
+.set-row .set-ctrl{flex-shrink:0}
+/* iOS-style toggle */
+.tgl{position:relative;display:inline-block;width:46px;height:28px;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0}
+.tgl .tgl-track{position:absolute;cursor:pointer;inset:0;background:#3a3a3a;border-radius:14px;transition:background var(--m-fast)}
+.tgl .tgl-track:before{content:'';position:absolute;height:22px;width:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform var(--m-fast);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.tgl input:checked + .tgl-track{background:var(--g)}
+.tgl input:checked + .tgl-track:before{transform:translateX(18px)}
+.tgl input:focus-visible + .tgl-track{outline:2px solid var(--g);outline-offset:2px}
+/* Hour selector chips */
+.hr-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hr-chip{padding:8px 14px;border-radius:var(--r-pill);border:1px solid var(--brd2);background:transparent;color:var(--t3);font-size:13px;cursor:pointer;font-weight:500;min-height:36px;font-variant-numeric:tabular-nums}
+.hr-chip.on{border-color:var(--g);background:var(--gd);color:var(--g);font-weight:700}
+
+/* === A11y: Texto grande === */
+body.txt-lg{font-size:16px}
+body.txt-lg .fi{font-size:17px;padding:16px 18px}
+body.txt-lg .bal{font-size:34px}
+body.txt-lg .a2,body.txt-lg .vl,body.txt-lg .vr,body.txt-lg .vg{font-size:16px}
+body.txt-lg .ds,body.txt-lg .pp,body.txt-lg .pn,body.txt-lg .tx .c2{font-size:14px}
+body.txt-lg .fl2,body.txt-lg .ct,body.txt-lg .s2,body.txt-lg .ins-l,body.txt-lg .qt-cat{font-size:13px}
+body.txt-lg .nav>div{font-size:11px}
+body.txt-lg .cp,body.txt-lg .fb,body.txt-lg .dr-p{font-size:14px;padding:12px 18px}
+body.txt-lg .sv,body.txt-lg .lbtn{font-size:17px;padding:18px}
+body.txt-lg .ins-v{font-size:17px}
+body.txt-lg .ins-c{min-width:150px}
+body.txt-lg .qt-amt{font-size:16px}
+body.txt-lg .set-label{font-size:15px}
+body.txt-lg .set-sub{font-size:13px}
+
+/* === A11y: Alto contraste === */
+body.contrast-hi{--t:#ffffff;--t2:#dadada;--t3:#a8a8a8;--t4:#7a7a7a;--brd:#2e2e2e;--brd2:#3d3d43}
+body.contrast-hi .ct,body.contrast-hi .fl2,body.contrast-hi .ins-l{color:#bdbdbd}
+body.contrast-hi .ds{color:#9c9c9c}
 </style>
 <script>
 // Lazy-load ApexCharts only when needed
@@ -380,6 +432,13 @@ function loadTesseract(){
 </script>
 </head>
 <body>
+<script>
+// Aplica prefs de accesibilidad apenas carga el body (sin esperar a Supabase)
+try{
+  if(localStorage.getItem('mf_txt_lg')==='1')document.body.classList.add('txt-lg');
+  if(localStorage.getItem('mf_contrast_hi')==='1')document.body.classList.add('contrast-hi');
+}catch(e){}
+</script>
 <div id="landing" class="land">
   <div class="land-logo">mis finanzas</div>
   <p class="land-sub">Controlá tus ingresos y gastos en ARS y USD desde cualquier dispositivo. Simple, rápido, y siempre sincronizado.</p>
@@ -571,7 +630,7 @@ function initApp(pendingMode) {
   async function initAuth(){
     try{
       var r=await sb.auth.getSession();
-      if(r.data.session){S.user=r.data.session.user;await loadData();await fetchDolarAPI();S.view='dashboard'}
+      if(r.data.session){S.user=r.data.session.user;await loadData();applyA11yPrefs();setupNotifications();await fetchDolarAPI();S.view='dashboard'}
       else if(pendingMode){S.aMode=pendingMode;S.view='auth'}
       else{S.view='landing'}
     }catch(e){
@@ -581,8 +640,8 @@ function initApp(pendingMode) {
     render();
     sb.auth.onAuthStateChange(async function(ev,session){
       if(ev==='INITIAL_SESSION')return;
-      if(session){S.user=session.user;await loadData();await fetchDolarAPI();S.view='dashboard';render()}
-      else{S.user=null;S.txns=[];S.view='landing';render()}
+      if(session){S.user=session.user;await loadData();applyA11yPrefs();setupNotifications();await fetchDolarAPI();S.view='dashboard';render()}
+      else{S.user=null;S.txns=[];if(_reminderTimer){clearTimeout(_reminderTimer);_reminderTimer=null}S.view='landing';render()}
     });
   }
 
@@ -1053,6 +1112,179 @@ function initApp(pendingMode) {
     document.body.appendChild(bg);
   };
 
+  // === PREFERENCIAS (a11y + notif) ===
+  function getPref(path,def){
+    var p=S.budgets&&S.budgets.__prefs;
+    if(!p)return def;
+    var keys=path.split('.');
+    for(var i=0;i<keys.length;i++){if(p==null)return def;p=p[keys[i]]}
+    return p===undefined?def:p;
+  }
+  function setPref(path,val){
+    if(!S.budgets.__prefs)S.budgets.__prefs={};
+    var keys=path.split('.');var o=S.budgets.__prefs;
+    for(var i=0;i<keys.length-1;i++){if(!o[keys[i]]||typeof o[keys[i]]!=='object')o[keys[i]]={};o=o[keys[i]]}
+    o[keys[keys.length-1]]=val;
+  }
+  function applyA11yPrefs(){
+    var b=document.body;
+    var lg=!!getPref('ui.txtLarge',false);
+    var hc=!!getPref('ui.contrastHi',false);
+    b.classList.toggle('txt-lg',lg);
+    b.classList.toggle('contrast-hi',hc);
+    try{
+      localStorage.setItem('mf_txt_lg',lg?'1':'0');
+      localStorage.setItem('mf_contrast_hi',hc?'1':'0');
+    }catch(e){}
+  }
+
+  // === NOTIFICACIONES (recordatorio diario) ===
+  var _reminderTimer=null;
+  function maybeFireReminder(){
+    if(!('Notification' in window))return;
+    if(Notification.permission!=='granted')return;
+    if(!getPref('notif.enabled',false))return;
+    var today=new Date().toISOString().slice(0,10);
+    if(getPref('notif.lastFired','')===today)return;
+    if(S.txns.some(function(t){return t.date===today}))return;
+    try{
+      new Notification('¿Cargaste lo de hoy? 💰',{
+        body:'Apuntá tus gastos antes de que se te olviden.',
+        icon:'icon-192x192.png',
+        badge:'icon-192x192.png',
+        tag:'mf-daily-reminder'
+      });
+      setPref('notif.lastFired',today);
+      _saveSettings().catch(function(){});
+    }catch(e){console.warn('Notif error:',e)}
+  }
+  function scheduleReminder(){
+    if(_reminderTimer){clearTimeout(_reminderTimer);_reminderTimer=null}
+    if(!getPref('notif.enabled',false))return;
+    var hour=parseInt(getPref('notif.hour',21),10)||21;
+    var now=new Date();
+    var target=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hour,0,0,0);
+    if(target.getTime()<=now.getTime()){target.setDate(target.getDate()+1)}
+    _reminderTimer=setTimeout(function(){
+      maybeFireReminder();
+      scheduleReminder();
+    },target.getTime()-now.getTime());
+  }
+  function setupNotifications(){
+    if(!('Notification' in window))return;
+    if(!getPref('notif.enabled',false))return;
+    if(Notification.permission!=='granted'){setPref('notif.enabled',false);return}
+    maybeFireReminder();
+    scheduleReminder();
+  }
+
+  window._toggleNotif=async function(checked){
+    if(checked){
+      if(!('Notification' in window)){toast('Tu navegador no soporta notificaciones',true);render();return}
+      if(Notification.permission==='denied'){toast('Permiso bloqueado. Activalo desde los ajustes del navegador.',true);render();return}
+      if(Notification.permission!=='granted'){
+        try{var perm=await Notification.requestPermission();if(perm!=='granted'){toast('Permiso no otorgado',true);render();return}}
+        catch(e){toast('No se pudo pedir permiso',true);render();return}
+      }
+      setPref('notif.enabled',true);
+      if(getPref('notif.hour',null)==null)setPref('notif.hour',21);
+      scheduleReminder();
+      toast('Recordatorio activado ✓');
+      // Notif de prueba
+      try{new Notification('Recordatorio activado ✓',{body:'Te avisaré a las '+getPref('notif.hour',21)+':00 si no cargaste nada.',icon:'icon-192x192.png',tag:'mf-test'})}catch(e){}
+    } else {
+      setPref('notif.enabled',false);
+      if(_reminderTimer){clearTimeout(_reminderTimer);_reminderTimer=null}
+      toast('Recordatorio desactivado');
+    }
+    try{await _saveSettings()}catch(e){toast('Error al guardar',true)}
+    render();
+  };
+  window._setNotifHour=async function(h){
+    setPref('notif.hour',parseInt(h,10)||21);
+    scheduleReminder();
+    try{await _saveSettings()}catch(e){}
+    render();
+  };
+  window._toggleTxtLg=async function(checked){
+    setPref('ui.txtLarge',!!checked);
+    applyA11yPrefs();
+    try{await _saveSettings()}catch(e){}
+    render();
+  };
+  window._toggleContrastHi=async function(checked){
+    setPref('ui.contrastHi',!!checked);
+    applyA11yPrefs();
+    try{await _saveSettings()}catch(e){}
+    render();
+  };
+
+  // === ATAJOS RÁPIDOS (top categorías de gasto últimos 90 días) ===
+  function getQuickTemplates(){
+    var cutoff=new Date();cutoff.setDate(cutoff.getDate()-90);
+    var cutStr=cutoff.toISOString().slice(0,10);
+    var groups={};
+    S.txns.forEach(function(t){
+      if(t.type!=='gasto')return;
+      if(t.date<cutStr)return;
+      var k=t.category;
+      if(!groups[k])groups[k]={count:0,amounts:[],lastCurrency:t.currency};
+      groups[k].count++;
+      groups[k].amounts.push(toARS(t));
+      groups[k].lastCurrency=t.currency;
+    });
+    var arr=[];
+    Object.keys(groups).forEach(function(k){
+      var g=groups[k];if(g.count<2)return;
+      g.amounts.sort(function(a,b){return a-b});
+      var med=g.amounts[Math.floor(g.amounts.length/2)];
+      arr.push({cat:k,count:g.count,median:Math.round(med/100)*100||med});
+    });
+    arr.sort(function(a,b){return b.count-a.count});
+    return arr.slice(0,5);
+  }
+  function categoryEmoji(cat){
+    var c=(cat||'').toLowerCase();
+    if(c.indexOf('super')>=0||c.indexOf('mercado')>=0)return'🛒';
+    if(c.indexOf('delivery')>=0||c.indexOf('comida')>=0||c.indexOf('restau')>=0)return'🍔';
+    if(c.indexOf('transp')>=0||c.indexOf('combust')>=0||c.indexOf('nafta')>=0)return'⛽';
+    if(c.indexOf('salida')>=0||c.indexOf('ocio')>=0)return'🎟️';
+    if(c.indexOf('suscrip')>=0)return'📺';
+    if(c.indexOf('salud')>=0||c.indexOf('farmac')>=0)return'💊';
+    if(c.indexOf('alquiler')>=0||c.indexOf('expens')>=0||c.indexOf('vivienda')>=0)return'🏠';
+    if(c.indexOf('ropa')>=0)return'👕';
+    if(c.indexOf('educ')>=0)return'📚';
+    if(c.indexOf('ahorro')>=0||c.indexOf('inversión')>=0||c.indexOf('inversion')>=0)return'💰';
+    if(c.indexOf('sueldo')>=0||c.indexOf('ingreso')>=0)return'💵';
+    return'📌';
+  }
+  window._quickAdd=async function(cat,amt){
+    cat=String(cat||'');amt=parseFloat(amt);
+    if(!cat||!isFinite(amt)||amt<=0){toast('Atajo inválido',true);return}
+    var txn={type:'gasto',currency:'ARS',amount:amt,category:cat,description:'',date:new Date().toISOString().slice(0,10),image_url:null};
+    var prevEdit=S.editId;S.editId=null;
+    try{
+      await _saveTxn(txn);
+      toast(cat+' · '+fA(amt)+' ✓');
+      // Mostrar undo + opción "editar" en toast
+      var bar=document.querySelector('.tst');
+      if(bar){
+        bar.className='tst tst-undo';
+        bar.innerHTML='<span class="tst-msg">'+esc(cat)+' · '+fA(amt)+'</span><span class="tst-act" onclick="_quickAddEdit()">Editar</span>';
+        clearTimeout(tt);tt=setTimeout(function(){if(bar.parentNode)bar.remove()},5000);
+      }
+      window._lastQuickAdded=S.txns[0];
+      render();
+    }catch(e){
+      toast('Error al guardar atajo',true);
+    }finally{S.editId=prevEdit}
+  };
+  window._quickAddEdit=function(){
+    var t=window._lastQuickAdded;if(!t)return;
+    var bar=document.querySelector('.tst');if(bar)bar.remove();
+    _eT(t.id);
+  };
+
   // === SAVE HANDLER ===
   window._hS=async function(){
     if(S.saving)return;
@@ -1291,7 +1523,18 @@ function initApp(pendingMode) {
     // Smart summary
     var summaryHTML=smartSummaryHTML(mt,ct);
 
-    el.innerHTML='<div class="pb100"><div class="hdr"><div class="logo2">mis finanzas</div><div class="hdr-r"><span onclick="_showExportMenu(event)">📥 Exportar</span></div></div>'+tcStripHTML+'<div class="mn"><span onclick="_pM()">‹</span><span class="ml">'+MO[S.month]+' '+S.year+'</span><span onclick="_nM()">›</span></div>'+alertsHTML+'<div class="cd"><div class="ct">Balance consolidado <em>(en ARS)</em></div><div class="bal '+(bl>=0?'pos':'neg')+'">'+(bl>=0?'+':'')+fA(bl)+'</div></div>'+summaryHTML+insHTML+'<div class="g2"><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('ARS')+'<span style="font-size:12px;color:var(--t3)">Pesos</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fA(ai)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fA(ag)+'</div></div><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('USD')+'<span style="font-size:12px;color:var(--t3)">Dólares</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fU(ui)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fU(ug)+'</div></div></div><div class="g2"><div class="mc qa" onclick="_oF(\'ingreso\')" style="border-color:var(--g2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--g)">↑</span><span style="font-size:14px;font-weight:600;color:var(--g)">Ingreso</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar cobro</p></div><div class="mc qa" onclick="_oF(\'gasto\')" style="border-color:var(--r2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--r)">↓</span><span style="font-size:14px;font-weight:600;color:var(--r)">Gasto</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar pago</p></div></div>'+bHTML+'<div class="cd"><div class="ct">Gastos por categoría <span style="font-weight:normal;color:var(--t4);text-transform:none">· tocá para filtrar</span></div>'+(pieData.length?pieH(pieData,110):'<div class="emp">Sin gastos este mes</div>')+'</div>'+rachaHTML+ahorroHTML+'<div class="cd" style="padding-bottom:0"><div class="ct">Evolución de tus finanzas <em>(ARS)</em> <span style="font-weight:normal;color:var(--t4);text-transform:none">· tocá un mes</span></div><div id="chart-evolucion"></div></div><div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="ct" style="margin:0">Últimos movimientos</div><span class="lnk" onclick="_gL()">Ver todos →</span></div>'+(rec.length===0?'<div class="emp">Tocá + para agregar tu primer movimiento</div>':rec.map(function(t){return'<div class="tx"><div class="lf"><div class="c2">'+esc(t.category)+' '+bdg(t.currency,1)+'</div>'+(t.description&&t.description!==t.category?'<div class="ds">'+esc(t.description)+'</div>':'')+'</div><span class="a2" style="color:'+(t.type==='ingreso'?'var(--g)':'var(--r)')+'">'+(t.type==='ingreso'?'+':'-')+fM(t.amount,t.currency)+'</span></div>'}).join(''))+'</div><div style="text-align:center;padding:4px 0 8px"><span class="lnk" onclick="_goBudgets()">⚙ Presupuestos por categoría</span></div></div><div class="fab" onclick="_oF()">+</div><div class="nav"><div class="on" onclick="_gD()">📊<span>Dashboard</span></div><div onclick="_gL()">📋<span>Movimientos</span></div><div onclick="_goSettings()">⚙️<span>Ajustes</span></div></div>';
+    // Atajos rápidos: top categorías de gasto últimos 90 días
+    var qts=getQuickTemplates();
+    var qtHTML='';
+    if(qts.length>=2){
+      qtHTML='<div class="qt-section-title"><span>⚡ Atajos rápidos</span><em>tocá para registrar</em></div><div class="qt-row">'
+        +qts.map(function(q){
+          var argCat=JSON.stringify(q.cat).replace(/"/g,'&quot;');
+          return'<button class="qt-card" onclick="_quickAdd('+argCat+','+q.median+')" tabindex="0"><span class="qt-ico">'+categoryEmoji(q.cat)+'</span><span class="qt-cat">'+esc(q.cat)+'</span><span class="qt-amt">'+fA(q.median)+'</span></button>';
+        }).join('')+'</div>';
+    }
+
+    el.innerHTML='<div class="pb100"><div class="hdr"><div class="logo2">mis finanzas</div><div class="hdr-r"><span onclick="_showExportMenu(event)">📥 Exportar</span></div></div>'+tcStripHTML+'<div class="mn"><span onclick="_pM()">‹</span><span class="ml">'+MO[S.month]+' '+S.year+'</span><span onclick="_nM()">›</span></div>'+alertsHTML+'<div class="cd"><div class="ct">Balance consolidado <em>(en ARS)</em></div><div class="bal '+(bl>=0?'pos':'neg')+'">'+(bl>=0?'+':'')+fA(bl)+'</div></div>'+summaryHTML+insHTML+'<div class="g2"><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('ARS')+'<span style="font-size:12px;color:var(--t3)">Pesos</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fA(ai)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fA(ag)+'</div></div><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('USD')+'<span style="font-size:12px;color:var(--t3)">Dólares</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fU(ui)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fU(ug)+'</div></div></div><div class="g2"><div class="mc qa" onclick="_oF(\'ingreso\')" style="border-color:var(--g2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--g)">↑</span><span style="font-size:14px;font-weight:600;color:var(--g)">Ingreso</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar cobro</p></div><div class="mc qa" onclick="_oF(\'gasto\')" style="border-color:var(--r2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--r)">↓</span><span style="font-size:14px;font-weight:600;color:var(--r)">Gasto</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar pago</p></div></div>'+qtHTML+bHTML+'<div class="cd"><div class="ct">Gastos por categoría <span style="font-weight:normal;color:var(--t4);text-transform:none">· tocá para filtrar</span></div>'+(pieData.length?pieH(pieData,110):'<div class="emp">Sin gastos este mes</div>')+'</div>'+rachaHTML+ahorroHTML+'<div class="cd" style="padding-bottom:0"><div class="ct">Evolución de tus finanzas <em>(ARS)</em> <span style="font-weight:normal;color:var(--t4);text-transform:none">· tocá un mes</span></div><div id="chart-evolucion"></div></div><div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="ct" style="margin:0">Últimos movimientos</div><span class="lnk" onclick="_gL()">Ver todos →</span></div>'+(rec.length===0?'<div class="emp">Tocá + para agregar tu primer movimiento</div>':rec.map(function(t){return'<div class="tx"><div class="lf"><div class="c2">'+esc(t.category)+' '+bdg(t.currency,1)+'</div>'+(t.description&&t.description!==t.category?'<div class="ds">'+esc(t.description)+'</div>':'')+'</div><span class="a2" style="color:'+(t.type==='ingreso'?'var(--g)':'var(--r)')+'">'+(t.type==='ingreso'?'+':'-')+fM(t.amount,t.currency)+'</span></div>'}).join(''))+'</div><div style="text-align:center;padding:4px 0 8px"><span class="lnk" onclick="_goBudgets()">⚙ Presupuestos por categoría</span></div></div><div class="fab" onclick="_oF()">+</div><div class="nav"><div class="on" onclick="_gD()">📊<span>Dashboard</span></div><div onclick="_gL()">📋<span>Movimientos</span></div><div onclick="_goSettings()">⚙️<span>Ajustes</span></div></div>';
 
     // Store l6 globally for chart click handler
     window._chartL6=l6;
@@ -1456,6 +1699,15 @@ function initApp(pendingMode) {
       +'<div class="cat-add-row"><input type="text" class="fi" placeholder="Nueva categoría de gasto..." id="newCatOut" onkeydown="if(event.key===\'Enter\')_addCat(\'gasto\')"><div class="cat-add-btn" onclick="_addCat(\'gasto\')" style="background:var(--rd);border-color:var(--r2);color:var(--r)">+</div></div>'
       +'</div></div>';
 
+    var notifEnabled=!!getPref('notif.enabled',false);
+    var notifHour=parseInt(getPref('notif.hour',21),10)||21;
+    var notifBlocked=('Notification' in window) && Notification.permission==='denied';
+    var txtLg=!!getPref('ui.txtLarge',false);
+    var contrastHi=!!getPref('ui.contrastHi',false);
+    var hourChips=[18,19,20,21,22].map(function(h){
+      return'<button class="hr-chip '+(h===notifHour?'on':'')+'" onclick="_setNotifHour('+h+')">'+(h<10?'0':'')+h+':00</button>';
+    }).join('');
+
     var accountHTML='<div style="padding:0 20px">'
       +'<div style="background:var(--s);border:1px solid var(--brd);border-radius:12px;padding:18px;margin-bottom:16px">'
       +'<div style="font-size:11px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Cuenta</div>'
@@ -1465,6 +1717,15 @@ function initApp(pendingMode) {
       +'<div style="font-size:11px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Movimientos totales</div>'
       +'<div style="font-size:15px;color:var(--t);font-weight:500">'+S.txns.length+' registros</div>'
       +'</div>'
+      // Recordatorio diario
+      +'<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:6px 4px 8px">🔔 Recordatorios</div>'
+      +'<div class="set-row"><div class="set-info"><div class="set-label">Recordarme cargar gastos</div><div class="set-sub">'+(notifBlocked?'Tu navegador bloqueó las notificaciones. Activalas desde sus ajustes.':'Te aviso a la hora elegida si no cargaste nada ese día.')+'</div></div><label class="tgl"><input type="checkbox" '+(notifEnabled?'checked':'')+' onchange="_toggleNotif(this.checked)" '+(notifBlocked?'disabled':'')+'><span class="tgl-track"></span></label></div>'
+      +(notifEnabled?'<div style="padding:0 4px 16px"><div style="font-size:12px;color:var(--t3);margin-bottom:4px">Hora del recordatorio</div><div class="hr-chips">'+hourChips+'</div></div>':'<div style="height:8px"></div>')
+      // Apariencia
+      +'<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:6px 4px 8px">🎨 Apariencia</div>'
+      +'<div class="set-row"><div class="set-info"><div class="set-label">Texto más grande</div><div class="set-sub">Aumenta el tamaño de letras en toda la app.</div></div><label class="tgl"><input type="checkbox" '+(txtLg?'checked':'')+' onchange="_toggleTxtLg(this.checked)"><span class="tgl-track"></span></label></div>'
+      +'<div class="set-row" style="margin-bottom:20px"><div class="set-info"><div class="set-label">Alto contraste</div><div class="set-sub">Texto secundario más claro para leer mejor.</div></div><label class="tgl"><input type="checkbox" '+(contrastHi?'checked':'')+' onchange="_toggleContrastHi(this.checked)"><span class="tgl-track"></span></label></div>'
+      // Cerrar sesión
       +'<div onclick="_logout()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;border-radius:12px;border:1.5px solid var(--r2);background:var(--rd);cursor:pointer;min-height:50px" ontouchstart="this.style.transform=\'scale(.97)\'" ontouchend="this.style.transform=\'\'"><span style="font-size:16px">⏻</span><span style="color:var(--r);font-size:14px;font-weight:600">Cerrar sesión</span></div>'
       +'</div>';
 
