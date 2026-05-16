@@ -1535,32 +1535,65 @@ function initApp(pendingMode) {
   function _renderVoiceModal(){
     var m=document.querySelector('.voice-modal');
     var st=_voiceState;
-    var hasDetected=st.detected&&Object.keys(st.detected).length>0;
-    var stateLabel=st.active?'🎙 Escuchando...':(st.transcript?'Listo':'Tocá el micrófono');
-    var transcriptHTML=st.transcript?esc(st.transcript):'<span class="ph">"Gasté 4500 en el super hoy"</span>';
-    var detectedHTML='';
-    if(hasDetected){
-      var d=st.detected;var bits=[];
-      if(d.amount)bits.push('<strong>'+fA(d.amount)+'</strong>');
-      if(d.category)bits.push(esc(d.category));
-      if(d.date&&d.date!==new Date().toISOString().slice(0,10)){
-        bits.push(new Date(d.date+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}));
-      }
-      if(d.type&&d.type!==S.form.type)bits.push(d.type==='ingreso'?'(ingreso)':'(gasto)');
-      if(d.currency&&d.currency!=='ARS')bits.push(d.currency);
-      detectedHTML='<div style="margin-top:8px;padding:10px 14px;background:var(--gd);border:1px solid var(--g2);border-radius:10px;color:var(--g);font-size:13px;font-weight:600">✦ Detectado: '+bits.join(' · ')+'</div>';
+    // 1) Crear el shell del modal UNA sola vez. Las actualizaciones siguientes
+    //    sólo tocan textos y clases — el sheet y el mic NO se recrean, así sus
+    //    animaciones CSS (slideUp / pulse) no reinician y no parpadea.
+    if(!m){
+      var bg=document.createElement('div');bg.className='voice-modal';
+      bg.onclick=function(e){if(e.target===bg)_closeVoiceModal()};
+      bg.innerHTML='<div class="voice-sheet" onclick="event.stopPropagation()">'
+        +'<div class="voice-mic" id="vm-mic" onclick="_beginRecognitionRetry()">🎙</div>'
+        +'<div class="voice-state" id="vm-state">Tocá el micrófono</div>'
+        +'<div class="voice-transcript" id="vm-transcript"><span class="ph">"Gasté 4500 en el super hoy"</span></div>'
+        +'<div id="vm-detected"></div>'
+        +'<div class="voice-hint">Decí algo como <code>"gasté 4500 en el super hoy"</code> o <code>"cobré 250 mil de sueldo"</code>.</div>'
+        +'<div class="voice-actions"><button class="voice-cancel" onclick="_closeVoiceModal()">Cancelar</button><button class="voice-restart" onclick="_beginRecognitionRetry()">↻ Repetir</button><button class="voice-confirm" id="vm-confirm" onclick="_applyVoice()" disabled>Usar</button></div>'
+        +'</div>';
+      document.body.appendChild(bg);
+      m=bg;
     }
-    var inner='<div class="voice-sheet" onclick="event.stopPropagation()">'
-      +'<div class="voice-mic '+(st.active?'active':'')+'" onclick="_beginRecognitionRetry()">🎙</div>'
-      +'<div class="voice-state">'+stateLabel+'</div>'
-      +'<div class="voice-transcript">'+transcriptHTML+'</div>'
-      +detectedHTML
-      +'<div class="voice-hint">Decí algo como <code>"gasté 4500 en el super hoy"</code> o <code>"cobré 250 mil de sueldo"</code>.</div>'
-      +'<div class="voice-actions"><button class="voice-cancel" onclick="_closeVoiceModal()">Cancelar</button><button class="voice-restart" onclick="_beginRecognitionRetry()">↻ Repetir</button><button class="voice-confirm" onclick="_applyVoice()" '+(hasDetected?'':'disabled')+'>Usar</button></div>'
-      +'</div>';
-    if(m){m.innerHTML=inner;return}
-    var bg=document.createElement('div');bg.className='voice-modal';bg.onclick=function(){_closeVoiceModal()};
-    bg.innerHTML=inner;document.body.appendChild(bg);
+    // 2) Actualizar SOLO los nodos que cambian
+    var hasDetected=st.detected&&Object.keys(st.detected).length>0;
+    var mic=m.querySelector('#vm-mic');
+    if(mic){
+      if(st.active){if(!mic.classList.contains('active'))mic.classList.add('active')}
+      else{if(mic.classList.contains('active'))mic.classList.remove('active')}
+    }
+    var stateEl=m.querySelector('#vm-state');
+    if(stateEl){
+      var stateLabel=st.active?'🎙 Escuchando...':(st.transcript?'Listo':'Tocá el micrófono');
+      if(stateEl.textContent!==stateLabel)stateEl.textContent=stateLabel;
+    }
+    var trEl=m.querySelector('#vm-transcript');
+    if(trEl){
+      if(st.transcript){
+        if(trEl.textContent!==st.transcript)trEl.textContent=st.transcript;
+      } else {
+        trEl.innerHTML='<span class="ph">"Gasté 4500 en el super hoy"</span>';
+      }
+    }
+    var detEl=m.querySelector('#vm-detected');
+    if(detEl){
+      if(hasDetected){
+        var d=st.detected;var bits=[];
+        if(d.amount)bits.push('<strong>'+fA(d.amount)+'</strong>');
+        if(d.category)bits.push(esc(d.category));
+        if(d.date&&d.date!==new Date().toISOString().slice(0,10)){
+          bits.push(new Date(d.date+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}));
+        }
+        if(d.type&&d.type!==S.form.type)bits.push(d.type==='ingreso'?'(ingreso)':'(gasto)');
+        if(d.currency&&d.currency!=='ARS')bits.push(d.currency);
+        var newHTML='<div style="margin-top:8px;padding:10px 14px;background:var(--gd);border:1px solid var(--g2);border-radius:10px;color:var(--g);font-size:13px;font-weight:600">✦ Detectado: '+bits.join(' · ')+'</div>';
+        if(detEl.innerHTML!==newHTML)detEl.innerHTML=newHTML;
+      } else if(detEl.innerHTML!==''){
+        detEl.innerHTML='';
+      }
+    }
+    var confirmBtn=m.querySelector('#vm-confirm');
+    if(confirmBtn){
+      if(hasDetected)confirmBtn.removeAttribute('disabled');
+      else confirmBtn.setAttribute('disabled','');
+    }
   }
   window._beginRecognitionRetry=function(){
     if(_voiceState.active)return;
