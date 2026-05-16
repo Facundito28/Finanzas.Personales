@@ -21,5 +21,51 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuevo gasto",
+      "short_name": "Gasto",
+      "description": "Cargar un gasto rápido",
+      "url": "./?action=new-gasto",
+      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Escanear ticket",
+      "short_name": "Foto",
+      "description": "Sacar foto de un recibo y autocompletar",
+      "url": "./?action=scan",
+      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dictar gasto",
+      "short_name": "Voz",
+      "description": "Cargar un gasto hablando",
+      "url": "./?action=voice",
+      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Nuevo ingreso",
+      "short_name": "Ingreso",
+      "description": "Cargar un ingreso",
+      "url": "./?action=new-ingreso",
+      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "./share-target/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["image/*"]
+        }
+      ]
+    }
+  }
 }

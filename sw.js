@@ -1,5 +1,6 @@
 // Service Worker - Mis Finanzas PWA
-const CACHE_NAME = 'mis-finanzas-v9';
+const CACHE_NAME = 'mis-finanzas-v10';
+const SHARED_CACHE = 'mf-shared-data';
 const PRECACHE = [
   './',
   './index.html'
@@ -35,20 +36,52 @@ self.addEventListener('activate', function(e) {
 
 // Fetch: network-first strategy (always fresh data from Supabase)
 self.addEventListener('fetch', function(e) {
-  // Skip non-GET and Supabase API calls
+  var url = new URL(e.request.url);
+
+  // === Share Target API: capturar POST de "Compartir" de otras apps ===
+  // El manifest declara action: "./share-target/" method: POST. Acá lo
+  // interceptamos, guardamos la data en un cache temporal y redirigimos
+  // al index con ?share=1 para que el cliente la lea y la procese.
+  if (e.request.method === 'POST' && url.pathname.endsWith('/share-target/')) {
+    e.respondWith((async () => {
+      try {
+        const formData = await e.request.formData();
+        const text = formData.get('text') || formData.get('title') || formData.get('url') || '';
+        const files = formData.getAll('files');
+        const file = files.find(function(f) { return f && f.size > 0; });
+        const cache = await caches.open(SHARED_CACHE);
+        // Limpiar cualquier share anterior
+        await cache.delete('/shared/file');
+        await cache.delete('/shared/text');
+        if (file) {
+          await cache.put('/shared/file', new Response(file, {
+            headers: { 'Content-Type': file.type || 'image/jpeg' }
+          }));
+        }
+        if (text) {
+          await cache.put('/shared/text', new Response(String(text)));
+        }
+      } catch (err) { console.warn('share-target err:', err); }
+      // Redirect a la raíz del scope con ?share=1
+      var scope = self.registration.scope;
+      return Response.redirect(scope + '?share=1', 303);
+    })());
+    return;
+  }
+
   if (e.request.method !== 'GET') return;
-  var url = e.request.url;
+  var urlStr = e.request.url;
 
   // For Supabase/API/DolarAPI calls: always network (no cache, no fallback)
-  if (url.includes('api.') || url.includes('dolarapi.com')) return;
+  if (urlStr.includes('api.') || urlStr.includes('dolarapi.com')) return;
   // Para Supabase: el endpoint REST nunca se cachea, pero las imágenes de Storage sí (cache-first)
-  if (url.includes('supabase.co/rest/') || url.includes('supabase.co/auth/')) return;
+  if (urlStr.includes('supabase.co/rest/') || urlStr.includes('supabase.co/auth/')) return;
 
   // Tesseract.js assets (CDN + traineddata): cache-first, son grandes y rara vez cambian
-  if (url.includes('cdn.jsdelivr.net/npm/tesseract.js') ||
-      url.includes('cdn.jsdelivr.net/npm/tesseract.js-core') ||
-      url.includes('tessdata.projectnaptha.com') ||
-      url.includes('supabase.co/storage/')) {
+  if (urlStr.includes('cdn.jsdelivr.net/npm/tesseract.js') ||
+      urlStr.includes('cdn.jsdelivr.net/npm/tesseract.js-core') ||
+      urlStr.includes('tessdata.projectnaptha.com') ||
+      urlStr.includes('supabase.co/storage/')) {
     e.respondWith(
       caches.match(e.request).then(function(hit){
         if(hit)return hit;

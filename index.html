@@ -422,6 +422,16 @@ body.contrast-hi .ds{color:#9c9c9c}
 .voice-confirm{background:var(--g);color:#000;font-weight:700}
 .voice-confirm:disabled{opacity:.4;cursor:default}
 
+/* === Success overlay (confirmación visual fuerte al guardar) === */
+.success-overlay{position:fixed;inset:0;background:rgba(0,220,130,.96);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:400;animation:soIn .25s ease;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity .3s ease;-webkit-tap-highlight-color:transparent}
+.success-overlay .so-check{font-size:108px;color:#000;line-height:1;font-weight:900;animation:soPop .55s cubic-bezier(.34,1.56,.64,1)}
+.success-overlay .so-msg{font-size:24px;color:#000;font-weight:800;letter-spacing:-.5px;padding:0 24px;text-align:center;animation:soFade .35s ease .15s both}
+@keyframes soIn{from{opacity:0}to{opacity:1}}
+@keyframes soPop{0%{transform:scale(0) rotate(-20deg);opacity:0}55%{transform:scale(1.25) rotate(8deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes soFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+body.theme-light .success-overlay{background:rgba(22,163,74,.96)}
+body.theme-light .success-overlay .so-check,body.theme-light .success-overlay .so-msg{color:#fff}
+
 /* === Modo claro === */
 body.theme-light{
   --bg:#fafafa;--s:#ffffff;--s2:#f4f4f5;--brd:#e4e4e7;--brd2:#d4d4d8;
@@ -1380,14 +1390,13 @@ function initApp(pendingMode) {
     var prevEdit=S.editId;S.editId=null;
     try{
       await _saveTxn(txn);
-      toast(cat+' · '+fA(amt)+' ✓');
-      // Mostrar undo + opción "editar" en toast
-      var bar=document.querySelector('.tst');
-      if(bar){
-        bar.className='tst tst-undo';
-        bar.innerHTML='<span class="tst-msg">'+esc(cat)+' · '+fA(amt)+'</span><span class="tst-act" onclick="_quickAddEdit()">Editar</span>';
-        clearTimeout(tt);tt=setTimeout(function(){if(bar.parentNode)bar.remove()},5000);
-      }
+      try{if(navigator.vibrate)navigator.vibrate(30)}catch(e){}
+      // Toast con undo + opción "editar" en una sola barra
+      var old=document.querySelector('.tst');if(old)old.remove();
+      var bar=document.createElement('div');bar.className='tst tst-undo';
+      bar.innerHTML='<span class="tst-msg">✓ '+esc(cat)+' · '+fA(amt)+'</span><span class="tst-act" onclick="_quickAddEdit()">Editar</span>';
+      document.body.appendChild(bar);
+      clearTimeout(tt);tt=setTimeout(function(){if(bar.parentNode)bar.remove()},5000);
       window._lastQuickAdded=S.txns[0];
       render();
     }catch(e){
@@ -1645,10 +1654,10 @@ function initApp(pendingMode) {
     try{
       if(S.form.rec&&!S.editId){
         for(var i=0;i<12;i++){var d=new Date(S.form.date+'T12:00:00');d.setMonth(d.getMonth()+i);await _saveTxn(Object.assign({},txn,{date:d.toISOString().slice(0,10),image_url:i===0?imageUrl:null}))}
-        toast('12 meses recurrentes creados ✓');
+        _successOverlay('12 meses recurrentes creados');
       } else {
         await _saveTxn(txn);
-        toast(S.editId?'Editado ✓':S.form.type==='ingreso'?'Ingreso guardado ✓':'Gasto guardado ✓');
+        _successOverlay(S.editId?'¡Editado!':S.form.type==='ingreso'?'¡Ingreso guardado!':'¡Gasto guardado!');
       }
       S.editId=null;S.view='dashboard';render();
     }catch(e){
@@ -2097,8 +2106,100 @@ function initApp(pendingMode) {
     setTimeout(function(){var e=document.getElementById('amt');if(e&&!S.editId&&!f.imagePreview)e.focus()},200);
   }
 
+  // === INTENTS: ?action= (shortcuts) y ?share= (share target) ===
+  async function processIntents(){
+    var params=new URL(location.href).searchParams;
+    var action=params.get('action');
+    var hasShare=params.get('share')==='1';
+    if(!action&&!hasShare)return;
+    // Limpiar la URL para que no se reprocese al recargar
+    history.replaceState(null,'',location.pathname);
+    // Solo procesar si hay user logueado
+    if(!S.user)return;
+    if(hasShare){
+      try{
+        var cache=await caches.open('mf-shared-data');
+        var textRes=await cache.match('/shared/text');
+        var fileRes=await cache.match('/shared/file');
+        var sharedText=textRes?await textRes.text():'';
+        var sharedBlob=fileRes?await fileRes.blob():null;
+        // Limpiar para no reusar
+        await cache.delete('/shared/text');
+        await cache.delete('/shared/file');
+        // Abrir form y poblar
+        _oF('gasto');
+        await new Promise(function(r){setTimeout(r,150)});
+        if(sharedBlob&&sharedBlob.size>0){
+          // Usar el mismo pipeline que _onImageChange
+          try{
+            S.form.ocrStatus='loading';S.form.ocrDetected={};
+            var blob=await compressImage(sharedBlob,1280,0.82);
+            var dataUrl=await blobToDataURL(blob);
+            S.form.imageBlob=blob;S.form.imagePreview=dataUrl;
+            render();
+            var res=await runOcr(blob);
+            var cats=S.form.type==='ingreso'?S.catsIn:S.catsOut;
+            var det=parseReceipt(res.text||'',S.form.type,cats);
+            S.form.ocrStatus='done';S.form.ocrConfidence=Math.round(res.confidence||0);
+            S.form.ocrDetected=det;
+            if(det.amount&&!S.form.amount)S.form.amount=String(Math.round(det.amount*100)/100);
+            if(det.date&&det.date!==S.form.date)S.form.date=det.date;
+            if(det.merchant&&!S.form.desc)S.form.desc=det.merchant;
+            if(det.category&&!S.form.category&&cats.indexOf(det.category)>=0)S.form.category=det.category;
+            var hasAny=det.amount||det.date||det.merchant||det.category;
+            toast(hasAny?'Foto compartida procesada ✓':'Foto cargada, completá los datos a mano',!hasAny);
+            render();
+          }catch(e){
+            console.error('Share OCR error:',e);
+            S.form.ocrStatus='error';toast('Error procesando la imagen',true);render();
+          }
+        } else if(sharedText){
+          // Tratar el texto como si fuera dictado de voz
+          var cats2=S.catsOut;
+          var det2=parseVoice(sharedText,'gasto',cats2);
+          if(det2.type==='ingreso'){S.form.type='ingreso';cats2=S.catsIn;det2=parseVoice(sharedText,'ingreso',cats2)}
+          if(det2.currency)S.form.currency=det2.currency;
+          if(det2.amount)S.form.amount=String(det2.amount);
+          if(det2.date)S.form.date=det2.date;
+          if(det2.category&&cats2.indexOf(det2.category)>=0)S.form.category=det2.category;
+          if(!S.form.desc)S.form.desc=sharedText.slice(0,80);
+          S.form.ocrDetected={amount:!!det2.amount,date:!!det2.date,category:!!det2.category,merchant:!!sharedText};
+          toast('Texto compartido procesado ✓');
+          render();
+        }
+      }catch(e){console.warn('processIntents share err:',e)}
+      return;
+    }
+    // Shortcuts del manifest
+    switch(action){
+      case 'new-gasto':_oF('gasto');break;
+      case 'new-ingreso':_oF('ingreso');break;
+      case 'scan':
+        _oF('gasto');
+        setTimeout(function(){var inp=document.getElementById('ocrFile');if(inp)inp.click()},250);
+        break;
+      case 'voice':
+        _oF('gasto');
+        setTimeout(function(){if(typeof _startVoice==='function')_startVoice()},250);
+        break;
+    }
+  }
+
+  // === SUCCESS OVERLAY (confirmación visual fuerte al guardar) ===
+  window._successOverlay=function(msg){
+    try{if(navigator.vibrate)navigator.vibrate([20,40,60])}catch(e){}
+    var ov=document.createElement('div');
+    ov.className='success-overlay';
+    ov.innerHTML='<div class="so-check">✓</div><div class="so-msg">'+esc(msg||'¡Guardado!')+'</div>';
+    document.body.appendChild(ov);
+    setTimeout(function(){if(ov.parentNode){ov.style.opacity='0';setTimeout(function(){if(ov.parentNode)ov.remove()},300)}},1100);
+  };
+
   // GO
-  initAuth();
+  initAuth().then(function(){
+    // Esperar a que termine el primer render
+    setTimeout(processIntents,300);
+  });
 }
 </script>
 <script>
