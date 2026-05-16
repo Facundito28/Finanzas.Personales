@@ -1,5 +1,5 @@
 // Service Worker - Mis Finanzas PWA
-const CACHE_NAME = 'mis-finanzas-v8';
+const CACHE_NAME = 'mis-finanzas-v9';
 const PRECACHE = [
   './',
   './index.html'
@@ -13,6 +13,11 @@ self.addEventListener('install', function(e) {
     })
   );
   self.skipWaiting();
+});
+
+// Permitir que el cliente fuerce skipWaiting via postMessage (auto-reload flow)
+self.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // Activate: clean old caches
