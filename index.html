@@ -422,6 +422,38 @@ body.contrast-hi .ds{color:#9c9c9c}
 .voice-confirm{background:var(--g);color:#000;font-weight:700}
 .voice-confirm:disabled{opacity:.4;cursor:default}
 
+/* === Batch mode (cargar varios y guardar todos juntos) === */
+.batch-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--s);border:1.5px solid var(--brd2);border-radius:var(--r-md);margin-bottom:4px;min-height:52px}
+.batch-bar.on{border-color:var(--g2);background:var(--gd)}
+.batch-bar .bb-label{font-size:14px;font-weight:600;color:var(--t2);display:flex;align-items:center;gap:8px}
+.batch-bar.on .bb-label{color:var(--g)}
+.batch-bar .bb-count{font-size:11px;color:var(--t3);background:var(--s2);padding:2px 8px;border-radius:var(--r-pill);margin-left:6px;font-weight:700}
+.batch-bar.on .bb-count{background:var(--g);color:#000}
+
+.pending-card{background:var(--s);border:1.5px solid var(--g2);border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px}
+.pending-card .pc-title{font-size:11px;color:var(--g);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.pending-card .pc-title .pc-clear{background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;font-weight:500;padding:4px 8px;text-transform:none;letter-spacing:0}
+.pending-card .pc-clear:active{color:var(--r)}
+.pending-item{display:flex;align-items:center;gap:10px;padding:8px 4px;border-top:1px solid var(--brd);font-size:13px}
+.pending-item:first-of-type{border-top:none}
+.pending-item .pi-bullet{width:6px;height:6px;border-radius:50%;background:var(--g);flex-shrink:0}
+.pending-item .pi-cat{flex:1;min-width:0;color:var(--t);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pending-item .pi-amt{font-variant-numeric:tabular-nums;font-weight:700;color:var(--t);flex-shrink:0}
+.pending-item .pi-date{font-size:11px;color:var(--t3);flex-shrink:0;margin-left:6px}
+.pending-item .pi-x{background:var(--s2);border:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--t3);cursor:pointer;font-size:14px;flex-shrink:0}
+.pending-item .pi-x:active{background:var(--rd);color:var(--r);transform:scale(.9)}
+
+.save-batch-btn{width:100%;padding:18px;background:var(--g);border:none;border-radius:14px;color:#000;font-size:17px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;box-shadow:var(--sh-2);transition:transform var(--m-instant)}
+.save-batch-btn:active{transform:scale(.98)}
+.save-batch-btn:disabled{opacity:.5;cursor:default;pointer-events:none}
+.save-batch-btn .sbb-count{background:#000;color:var(--g);font-size:13px;font-weight:900;padding:3px 10px;border-radius:var(--r-pill)}
+
+/* Banner de pendientes en dashboard */
+.pending-banner{margin:8px 16px 0;padding:12px 14px;background:var(--gd);border:1.5px solid var(--g2);border-radius:var(--r-md);display:flex;align-items:center;justify-content:space-between;gap:10px;animation:fadeUp .3s ease}
+.pending-banner .pb-text{font-size:13px;color:var(--g);font-weight:600;display:flex;align-items:center;gap:8px}
+.pending-banner .pb-cta{background:var(--g);color:#000;border:none;padding:8px 14px;border-radius:var(--r-pill);font-size:12px;font-weight:700;cursor:pointer;min-height:36px}
+.pending-banner .pb-cta:active{transform:scale(.96)}
+
 /* === Success overlay (confirmación visual fuerte al guardar) === */
 .success-overlay{position:fixed;inset:0;background:rgba(0,220,130,.96);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:400;animation:soIn .25s ease;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity .3s ease;-webkit-tap-highlight-color:transparent}
 .success-overlay .so-check{font-size:108px;color:#000;line-height:1;font-weight:900;animation:soPop .55s cubic-bezier(.34,1.56,.64,1)}
@@ -600,7 +632,8 @@ function initApp(pendingMode) {
     editId:null,form:{type:'gasto',currency:'ARS',amount:'',category:'',desc:'',date:new Date().toISOString().slice(0,10),rec:false,imageBlob:null,imagePreview:null,imageUrl:null,ocrStatus:'idle',ocrConfidence:0,ocrDetected:{}},
     aMode:'login',aErr:'',aOk:'',aLoad:false,fCat:'all',fCur:'all',budgets:{},saving:false,dataLoading:true,
     dateRange:'month',customFrom:'',customTo:'',search:'',lastDeleted:null,
-    catsIn:CI.slice(),catsOut:CO.slice(),settingsTab:'config'};
+    catsIn:CI.slice(),catsOut:CO.slice(),settingsTab:'config',
+    batchMode:false,pendingTxns:[]};
 
   const el=document.getElementById('app');
   let tt;
@@ -695,7 +728,7 @@ function initApp(pendingMode) {
   async function initAuth(){
     try{
       var r=await sb.auth.getSession();
-      if(r.data.session){S.user=r.data.session.user;await loadData();applyA11yPrefs();setupNotifications();await fetchDolarAPI();S.view='dashboard'}
+      if(r.data.session){S.user=r.data.session.user;await loadData();loadPending();applyA11yPrefs();setupNotifications();await fetchDolarAPI();S.view='dashboard'}
       else if(pendingMode){S.aMode=pendingMode;S.view='auth'}
       else{S.view='landing'}
     }catch(e){
@@ -705,7 +738,7 @@ function initApp(pendingMode) {
     render();
     sb.auth.onAuthStateChange(async function(ev,session){
       if(ev==='INITIAL_SESSION')return;
-      if(session){S.user=session.user;await loadData();applyA11yPrefs();setupNotifications();await fetchDolarAPI();S.view='dashboard';render()}
+      if(session){S.user=session.user;await loadData();loadPending();applyA11yPrefs();setupNotifications();await fetchDolarAPI();S.view='dashboard';render()}
       else{S.user=null;S.txns=[];if(_reminderTimer){clearTimeout(_reminderTimer);_reminderTimer=null}S.view='landing';render()}
     });
   }
@@ -1629,6 +1662,131 @@ function initApp(pendingMode) {
     render();
   };
 
+  // === BATCH / CARGA MASIVA ===
+  // Persist en localStorage por si cierran la app por error con pendientes
+  function savePending(){
+    try{
+      var key=S.user?('mf_pending_'+S.user.id):'mf_pending';
+      if(S.pendingTxns.length>0)localStorage.setItem(key,JSON.stringify(S.pendingTxns));
+      else localStorage.removeItem(key);
+    }catch(e){}
+  }
+  function loadPending(){
+    try{
+      var key=S.user?('mf_pending_'+S.user.id):'mf_pending';
+      var s=localStorage.getItem(key);
+      if(s){
+        var arr=JSON.parse(s);
+        if(Array.isArray(arr))S.pendingTxns=arr;
+      }
+    }catch(e){S.pendingTxns=[]}
+    if(S.pendingTxns.length>0)S.batchMode=true;
+  }
+
+  window._toggleBatchMode=function(checked){
+    if(checked){
+      S.batchMode=true;
+    } else {
+      if(S.pendingTxns.length>0){
+        if(!confirm('Tenés '+S.pendingTxns.length+' movimientos sin guardar. ¿Querés descartarlos?')){
+          return; // No cambia el toggle
+        }
+        S.pendingTxns=[];savePending();
+      }
+      S.batchMode=false;
+    }
+    render();
+  };
+
+  window._addToBatch=async function(){
+    var amt=parseFloat(S.form.amount);
+    if(!amt||amt<=0){toast('Ingresá un monto válido',true);return}
+    if(!S.form.category){toast('Elegí una categoría',true);return}
+    // Si tiene imagen pendiente, subirla ahora (al stack solo guardamos URL)
+    var imageUrl=S.form.imageUrl||null;
+    if(S.form.imageBlob&&!imageUrl){
+      try{
+        toast('Subiendo imagen...');
+        imageUrl=await uploadReceipt(S.form.imageBlob);
+      }catch(e){
+        toast('No pude subir la imagen, la agrego sin foto',true);
+        imageUrl=null;
+      }
+    }
+    var item={
+      type:S.form.type,currency:S.form.currency,amount:amt,
+      category:S.form.category,description:S.form.desc||'',date:S.form.date,
+      image_url:imageUrl
+    };
+    S.pendingTxns.push(item);
+    savePending();
+    try{if(navigator.vibrate)navigator.vibrate(25)}catch(e){}
+    // Reset form pero conservar tipo, moneda y fecha (carga repetitiva)
+    var keepType=S.form.type,keepCurrency=S.form.currency,keepDate=S.form.date;
+    S.form={type:keepType,currency:keepCurrency,amount:'',category:'',desc:'',date:keepDate,rec:false,imageBlob:null,imagePreview:null,imageUrl:null,ocrStatus:'idle',ocrConfidence:0,ocrDetected:{}};
+    toast('Agregado · pendientes: '+S.pendingTxns.length);
+    render();
+    setTimeout(function(){var e=document.getElementById('amt');if(e)e.focus()},120);
+  };
+
+  window._removePending=function(idx){
+    if(idx<0||idx>=S.pendingTxns.length)return;
+    S.pendingTxns.splice(idx,1);
+    savePending();
+    render();
+  };
+
+  window._discardPending=function(){
+    if(S.pendingTxns.length===0)return;
+    if(confirm('¿Descartar los '+S.pendingTxns.length+' pendientes?')){
+      S.pendingTxns=[];savePending();render();
+    }
+  };
+
+  window._saveBatch=async function(){
+    if(S.pendingTxns.length===0)return;
+    if(S.saving)return;
+    S.saving=true;
+    var btn=document.getElementById('saveBatchBtn');
+    var n=S.pendingTxns.length;
+    if(btn){btn.disabled=true;btn.innerHTML='Guardando '+n+'...'}
+    try{
+      var rows=S.pendingTxns.map(function(item){return{
+        user_id:S.user.id,
+        type:item.type,currency:item.currency,amount:item.amount,
+        category:item.category,description:item.description||'',
+        date:item.date,
+        tc_oficial:item.currency==='USD'?S.xr:0,
+        image_url:item.image_url||null
+      }});
+      var r=await sb.from('transactions').insert(rows).select();
+      if(r.error)throw new Error(r.error.message);
+      if(r.data){
+        // Insertar al inicio en orden inverso para mantener orden visual
+        for(var i=r.data.length-1;i>=0;i--){
+          var t=r.data[i];
+          S.txns.unshift({id:t.id,type:t.type,currency:t.currency,amount:Number(t.amount),category:t.category,description:t.description||'',date:t.date,tc:Number(t.tc_oficial)||0,image_url:t.image_url||null});
+        }
+      }
+      S.pendingTxns=[];
+      S.batchMode=false;
+      savePending();
+      _successOverlay('¡'+n+' movimientos guardados!');
+      S.editId=null;S.view='dashboard';render();
+    }catch(e){
+      console.error('saveBatch error:',e);
+      toast('Error al guardar: '+(e.message||'Intentá de nuevo'),true);
+      if(btn){btn.disabled=false;btn.innerHTML='💾 Guardar los '+S.pendingTxns.length+' juntos'}
+    }finally{S.saving=false}
+  };
+
+  window._goToBatch=function(){
+    // Volver al form para seguir cargando o guardar
+    S.batchMode=true;S.editId=null;
+    S.form={type:'gasto',currency:'ARS',amount:'',category:'',desc:'',date:new Date().toISOString().slice(0,10),rec:false,imageBlob:null,imagePreview:null,imageUrl:null,ocrStatus:'idle',ocrConfidence:0,ocrDetected:{}};
+    S.view='form';render();
+  };
+
   // === SAVE HANDLER ===
   window._hS=async function(){
     if(S.saving)return;
@@ -1878,7 +2036,13 @@ function initApp(pendingMode) {
         }).join('')+'</div>';
     }
 
-    el.innerHTML='<div class="pb100"><div class="hdr"><div class="logo2">mis finanzas</div><div class="hdr-r"><span onclick="_showExportMenu(event)">📥 Exportar</span></div></div>'+tcStripHTML+'<div class="mn"><span onclick="_pM()">‹</span><span class="ml">'+MO[S.month]+' '+S.year+'</span><span onclick="_nM()">›</span></div>'+alertsHTML+'<div class="cd"><div class="ct">Balance consolidado <em>(en ARS)</em></div><div class="bal '+(bl>=0?'pos':'neg')+'">'+(bl>=0?'+':'')+fA(bl)+'</div></div>'+summaryHTML+insHTML+'<div class="g2"><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('ARS')+'<span style="font-size:12px;color:var(--t3)">Pesos</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fA(ai)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fA(ag)+'</div></div><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('USD')+'<span style="font-size:12px;color:var(--t3)">Dólares</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fU(ui)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fU(ug)+'</div></div></div><div class="g2"><div class="mc qa" onclick="_oF(\'ingreso\')" style="border-color:var(--g2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--g)">↑</span><span style="font-size:14px;font-weight:600;color:var(--g)">Ingreso</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar cobro</p></div><div class="mc qa" onclick="_oF(\'gasto\')" style="border-color:var(--r2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--r)">↓</span><span style="font-size:14px;font-weight:600;color:var(--r)">Gasto</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar pago</p></div></div>'+qtHTML+bHTML+'<div class="cd"><div class="ct">Gastos por categoría <span style="font-weight:normal;color:var(--t4);text-transform:none">· tocá para filtrar</span></div>'+(pieData.length?pieH(pieData,110):'<div class="emp">Sin gastos este mes</div>')+'</div>'+rachaHTML+ahorroHTML+'<div class="cd" style="padding-bottom:0"><div class="ct">Evolución de tus finanzas <em>(ARS)</em> <span style="font-weight:normal;color:var(--t4);text-transform:none">· tocá un mes</span></div><div id="chart-evolucion"></div></div><div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="ct" style="margin:0">Últimos movimientos</div><span class="lnk" onclick="_gL()">Ver todos →</span></div>'+(rec.length===0?'<div class="emp">Tocá + para agregar tu primer movimiento</div>':rec.map(function(t){return'<div class="tx"><div class="lf"><div class="c2">'+esc(t.category)+' '+bdg(t.currency,1)+'</div>'+(t.description&&t.description!==t.category?'<div class="ds">'+esc(t.description)+'</div>':'')+'</div><span class="a2" style="color:'+(t.type==='ingreso'?'var(--g)':'var(--r)')+'">'+(t.type==='ingreso'?'+':'-')+fM(t.amount,t.currency)+'</span></div>'}).join(''))+'</div><div style="text-align:center;padding:4px 0 8px"><span class="lnk" onclick="_goBudgets()">⚙ Presupuestos por categoría</span></div></div><div class="fab" onclick="_oF()">+</div><div class="nav"><div class="on" onclick="_gD()">📊<span>Dashboard</span></div><div onclick="_gL()">📋<span>Movimientos</span></div><div onclick="_goSettings()">⚙️<span>Ajustes</span></div></div>';
+    // Banner si hay pendientes guardados localmente (recuperar sesion)
+    var pendingBannerHTML='';
+    if(S.pendingTxns.length>0){
+      pendingBannerHTML='<div class="pending-banner"><span class="pb-text">📦 Tenés '+S.pendingTxns.length+' movimiento'+(S.pendingTxns.length>1?'s':'')+' sin guardar</span><button class="pb-cta" onclick="_goToBatch()">Continuar →</button></div>';
+    }
+
+    el.innerHTML='<div class="pb100"><div class="hdr"><div class="logo2">mis finanzas</div><div class="hdr-r"><span onclick="_showExportMenu(event)">📥 Exportar</span></div></div>'+tcStripHTML+'<div class="mn"><span onclick="_pM()">‹</span><span class="ml">'+MO[S.month]+' '+S.year+'</span><span onclick="_nM()">›</span></div>'+pendingBannerHTML+alertsHTML+'<div class="cd"><div class="ct">Balance consolidado <em>(en ARS)</em></div><div class="bal '+(bl>=0?'pos':'neg')+'">'+(bl>=0?'+':'')+fA(bl)+'</div></div>'+summaryHTML+insHTML+'<div class="g2"><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('ARS')+'<span style="font-size:12px;color:var(--t3)">Pesos</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fA(ai)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fA(ag)+'</div></div><div class="mc"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+bdg('USD')+'<span style="font-size:12px;color:var(--t3)">Dólares</span></div><div class="s2">Ingresos</div><div class="vl vg">'+fU(ui)+'</div><div class="s2" style="margin-top:6px">Gastos</div><div class="vl vr">'+fU(ug)+'</div></div></div><div class="g2"><div class="mc qa" onclick="_oF(\'ingreso\')" style="border-color:var(--g2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--g)">↑</span><span style="font-size:14px;font-weight:600;color:var(--g)">Ingreso</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar cobro</p></div><div class="mc qa" onclick="_oF(\'gasto\')" style="border-color:var(--r2)"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--r)">↓</span><span style="font-size:14px;font-weight:600;color:var(--r)">Gasto</span></div><p style="font-size:11px;color:var(--t3);margin-top:4px">Registrar pago</p></div></div>'+qtHTML+bHTML+'<div class="cd"><div class="ct">Gastos por categoría <span style="font-weight:normal;color:var(--t4);text-transform:none">· tocá para filtrar</span></div>'+(pieData.length?pieH(pieData,110):'<div class="emp">Sin gastos este mes</div>')+'</div>'+rachaHTML+ahorroHTML+'<div class="cd" style="padding-bottom:0"><div class="ct">Evolución de tus finanzas <em>(ARS)</em> <span style="font-weight:normal;color:var(--t4);text-transform:none">· tocá un mes</span></div><div id="chart-evolucion"></div></div><div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="ct" style="margin:0">Últimos movimientos</div><span class="lnk" onclick="_gL()">Ver todos →</span></div>'+(rec.length===0?'<div class="emp">Tocá + para agregar tu primer movimiento</div>':rec.map(function(t){return'<div class="tx"><div class="lf"><div class="c2">'+esc(t.category)+' '+bdg(t.currency,1)+'</div>'+(t.description&&t.description!==t.category?'<div class="ds">'+esc(t.description)+'</div>':'')+'</div><span class="a2" style="color:'+(t.type==='ingreso'?'var(--g)':'var(--r)')+'">'+(t.type==='ingreso'?'+':'-')+fM(t.amount,t.currency)+'</span></div>'}).join(''))+'</div><div style="text-align:center;padding:4px 0 8px"><span class="lnk" onclick="_goBudgets()">⚙ Presupuestos por categoría</span></div></div><div class="fab" onclick="_oF()">+</div><div class="nav"><div class="on" onclick="_gD()">📊<span>Dashboard</span></div><div onclick="_gL()">📋<span>Movimientos</span></div><div onclick="_goSettings()">⚙️<span>Ajustes</span></div></div>';
 
     // Store l6 globally for chart click handler
     window._chartL6=l6;
@@ -2101,7 +2265,37 @@ function initApp(pendingMode) {
       ocrBlock='<button type="button" class="ocr-cta" onclick="_pickImage()"><span class="ocr-ico">📷</span><span>Escanear ticket o recibo</span></button>'+voiceBtn+'<input type="file" id="ocrFile" accept="image/*" capture="environment" hidden onchange="_onImageChange(this)">';
     }
 
-    el.innerHTML='<div class="pb100"><div class="hdr"><span style="font-size:17px;font-weight:600">'+(S.editId?'Editar':'Nuevo')+' movimiento</span><span onclick="_cF()" style="cursor:pointer;font-size:20px;color:var(--t3);min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;margin-right:-12px" tabindex="0" role="button" aria-label="Cerrar">✕</span></div><div class="fp">'+ocrBlock+'<div class="ft"><div onclick="_sT(\'gasto\')" style="background:'+(f.type==='gasto'?'var(--rd)':'var(--s2)')+';color:'+(f.type==='gasto'?'var(--r)':'var(--t3)')+'">Gasto</div><div onclick="_sT(\'ingreso\')" style="background:'+(f.type==='ingreso'?'var(--gd)':'var(--s2)')+';color:'+(f.type==='ingreso'?'var(--g)':'var(--t3)')+'">Ingreso</div></div><div><div class="fl2">Moneda</div><div class="ft"><div onclick="_sC(\'ARS\')" style="border:1.5px solid '+(f.currency==='ARS'?'var(--g)':'var(--brd2)')+';background:'+(f.currency==='ARS'?'var(--gd)':'var(--s2)')+';color:'+(f.currency==='ARS'?'var(--g)':'var(--t3)')+'">$ ARS</div><div onclick="_sC(\'USD\')" style="border:1.5px solid '+(f.currency==='USD'?'var(--b)':'var(--brd2)')+';background:'+(f.currency==='USD'?'var(--bd)':'var(--s2)')+';color:'+(f.currency==='USD'?'var(--b)':'var(--t3)')+'">US$ USD</div></div></div><div><div class="fl2">Monto'+chip('amount')+'</div><div class="aw"><span class="pf" style="color:'+(f.currency==='USD'?'var(--b)':'var(--g)')+'">'+(f.currency==='USD'?'US$':'$')+'</span><input type="number" inputmode="decimal" pattern="[0-9.,]*" class="fi" placeholder="0" value="'+esc(f.amount)+'" oninput="_setFormAmt(this.value)" id="amt" style="margin:0"></div><div class="eq" id="eq"></div></div><div><div class="fl2">Categoría'+chip('category')+'</div><div class="cps">'+cats.map(function(c){return'<div class="cp '+(f.category===c?ac:'')+'" onclick="_sCat(\''+esc(c)+'\')" tabindex="0" role="button">'+esc(c)+'</div>'}).join('')+'</div></div><div><div class="fl2">Fecha'+chip('date')+'</div><input type="date" class="fi" value="'+f.date+'" onchange="_setFormDate(this.value)" style="color-scheme:dark;margin:0"></div><div><div class="fl2">Descripción'+chip('merchant')+' <span style="color:var(--t4)">(opcional)</span></div><input type="text" class="fi" placeholder="Ej: Netflix, cena..." value="'+esc(f.desc)+'" oninput="_setFormDesc(this.value)" style="margin:0"></div>'+(!S.editId?'<div class="chk"><input type="checkbox" id="recChk" '+(f.rec?'checked':'')+' onchange="_setFormRec(this.checked)"><label for="recChk">Repetir todos los meses (12 meses)</label></div>':'')+'<div class="fp-actions"><div class="sv" onclick="_hS()" id="saveBtn" tabindex="0" role="button">'+(S.editId?'Guardar cambios':'Registrar')+'</div></div></div></div>';
+    // Batch toggle + lista de pendientes (solo si no es edicion)
+    var batchToggleHTML='';
+    var pendingListHTML='';
+    var actionButton='';
+    if(!S.editId){
+      var n=S.pendingTxns.length;
+      batchToggleHTML='<div class="batch-bar '+(S.batchMode?'on':'')+'"><span class="bb-label">📦 Cargar varios'+(n>0?'<span class="bb-count">'+n+'</span>':'')+'</span><label class="tgl" style="margin:0"><input type="checkbox" '+(S.batchMode?'checked':'')+' onchange="_toggleBatchMode(this.checked)"><span class="tgl-track"></span></label></div>';
+
+      if(S.batchMode&&S.pendingTxns.length>0){
+        pendingListHTML='<div class="pending-card"><div class="pc-title"><span>✓ '+S.pendingTxns.length+' pendiente'+(S.pendingTxns.length>1?'s':'')+'</span><button class="pc-clear" onclick="_discardPending()">Descartar todo</button></div>'
+          +S.pendingTxns.map(function(p,i){
+            var dt=new Date(p.date+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+            var amt=p.currency==='USD'?fU(p.amount):fA(p.amount);
+            return'<div class="pending-item"><span class="pi-bullet" style="background:'+(p.type==='ingreso'?'var(--g)':'var(--r)')+'"></span><span class="pi-cat">'+esc(p.category)+(p.description?' · '+esc(p.description):'')+'</span><span class="pi-amt" style="color:'+(p.type==='ingreso'?'var(--g)':'var(--r)')+'">'+(p.type==='ingreso'?'+':'-')+amt+'</span><span class="pi-date">'+dt+'</span><button class="pi-x" onclick="_removePending('+i+')" aria-label="Sacar">✕</button></div>';
+          }).join('')+'</div>';
+      }
+
+      // Si batchMode: "+ Agregar a la lista" + (debajo, si hay items) "Guardar todos"
+      // Si no: "Registrar" como siempre
+      if(S.batchMode){
+        actionButton='<div class="fp-actions"><div class="sv" onclick="_addToBatch()" id="saveBtn" tabindex="0" role="button" style="background:var(--gd);color:var(--g);border:1.5px solid var(--g2)">+ Agregar a la lista</div>'
+          +(S.pendingTxns.length>0?'<button class="save-batch-btn" id="saveBatchBtn" onclick="_saveBatch()" style="margin-top:10px">💾 Guardar los <span class="sbb-count">'+S.pendingTxns.length+'</span> juntos</button>':'')
+          +'</div>';
+      } else {
+        actionButton='<div class="fp-actions"><div class="sv" onclick="_hS()" id="saveBtn" tabindex="0" role="button">Registrar</div></div>';
+      }
+    } else {
+      actionButton='<div class="fp-actions"><div class="sv" onclick="_hS()" id="saveBtn" tabindex="0" role="button">Guardar cambios</div></div>';
+    }
+
+    el.innerHTML='<div class="pb100"><div class="hdr"><span style="font-size:17px;font-weight:600">'+(S.editId?'Editar':'Nuevo')+' movimiento</span><span onclick="_cF()" style="cursor:pointer;font-size:20px;color:var(--t3);min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;margin-right:-12px" tabindex="0" role="button" aria-label="Cerrar">✕</span></div><div class="fp">'+batchToggleHTML+pendingListHTML+ocrBlock+'<div class="ft"><div onclick="_sT(\'gasto\')" style="background:'+(f.type==='gasto'?'var(--rd)':'var(--s2)')+';color:'+(f.type==='gasto'?'var(--r)':'var(--t3)')+'">Gasto</div><div onclick="_sT(\'ingreso\')" style="background:'+(f.type==='ingreso'?'var(--gd)':'var(--s2)')+';color:'+(f.type==='ingreso'?'var(--g)':'var(--t3)')+'">Ingreso</div></div><div><div class="fl2">Moneda</div><div class="ft"><div onclick="_sC(\'ARS\')" style="border:1.5px solid '+(f.currency==='ARS'?'var(--g)':'var(--brd2)')+';background:'+(f.currency==='ARS'?'var(--gd)':'var(--s2)')+';color:'+(f.currency==='ARS'?'var(--g)':'var(--t3)')+'">$ ARS</div><div onclick="_sC(\'USD\')" style="border:1.5px solid '+(f.currency==='USD'?'var(--b)':'var(--brd2)')+';background:'+(f.currency==='USD'?'var(--bd)':'var(--s2)')+';color:'+(f.currency==='USD'?'var(--b)':'var(--t3)')+'">US$ USD</div></div></div><div><div class="fl2">Monto'+chip('amount')+'</div><div class="aw"><span class="pf" style="color:'+(f.currency==='USD'?'var(--b)':'var(--g)')+'">'+(f.currency==='USD'?'US$':'$')+'</span><input type="number" inputmode="decimal" pattern="[0-9.,]*" class="fi" placeholder="0" value="'+esc(f.amount)+'" oninput="_setFormAmt(this.value)" id="amt" style="margin:0"></div><div class="eq" id="eq"></div></div><div><div class="fl2">Categoría'+chip('category')+'</div><div class="cps">'+cats.map(function(c){return'<div class="cp '+(f.category===c?ac:'')+'" onclick="_sCat(\''+esc(c)+'\')" tabindex="0" role="button">'+esc(c)+'</div>'}).join('')+'</div></div><div><div class="fl2">Fecha'+chip('date')+'</div><input type="date" class="fi" value="'+f.date+'" onchange="_setFormDate(this.value)" style="color-scheme:dark;margin:0"></div><div><div class="fl2">Descripción'+chip('merchant')+' <span style="color:var(--t4)">(opcional)</span></div><input type="text" class="fi" placeholder="Ej: Netflix, cena..." value="'+esc(f.desc)+'" oninput="_setFormDesc(this.value)" style="margin:0"></div>'+(!S.editId&&!S.batchMode?'<div class="chk"><input type="checkbox" id="recChk" '+(f.rec?'checked':'')+' onchange="_setFormRec(this.checked)"><label for="recChk">Repetir todos los meses (12 meses)</label></div>':'')+actionButton+'</div></div>';
     if(S.form.currency==='USD'&&S.form.amount){var eq=document.getElementById('eq');if(eq){var amt=parseFloat(S.form.amount);var lines='≈ '+fA(amt*S.xr)+' oficial';if(S.xrBlue)lines+=' · '+fA(amt*S.xrBlue)+' blue';eq.textContent=lines}}
     setTimeout(function(){var e=document.getElementById('amt');if(e&&!S.editId&&!f.imagePreview)e.focus()},200);
   }
